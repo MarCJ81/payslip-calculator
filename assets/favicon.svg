@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="급여명세서 스튜디오">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f7a63"/>
+      <stop offset="1" stop-color="#0a5244"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#g)"/>
+  <path d="M20 14h20l6 6v30l-5-3.6L36 50l-5-3.6L26 50l-6-4V14Z" fill="none" stroke="#eaf7f1" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M25 24h14M25 31h14M25 38h8" stroke="#9fe3cd" stroke-width="3" stroke-linecap="round"/>
+</svg>

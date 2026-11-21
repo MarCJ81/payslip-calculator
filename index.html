@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>급여명세서 자동 생성기 — 주휴수당·4대보험·알바 급여명세서 1분</title>
+<meta name="description" content="5인 미만 사업장 사장님을 위한 급여명세서 생성기. 2026년 최저임금·주휴수당·4대보험·소득세를 자동 계산하고, 근로기준법 제48조 법정 기재사항을 갖춘 A4 명세서를 바로 인쇄·PDF 저장하세요. 입력값은 서버로 전송되지 않습니다.">
+<meta name="keywords" content="급여명세서, 임금명세서, 주휴수당 계산기, 4대보험 계산기, 알바 급여명세서, 최저임금 2026, 5인 미만 급여명세서, 급여명세서 양식">
+<link rel="canonical" href="https://marcj81.github.io/payslip-calculator/">
+<meta name="robots" content="index, follow">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#0d6b57">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="급여명세서 스튜디오">
+<meta property="og:title" content="급여명세서 자동 생성기 — 주휴수당·4대보험 1분">
+<meta property="og:description" content="주휴수당·4대보험·소득세 자동 계산, 법정 기재사항을 갖춘 A4 명세서 즉시 인쇄. 서버 전송 0건.">
+<meta property="og:url" content="https://marcj81.github.io/payslip-calculator/">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "급여명세서 스튜디오 (Payslip Studio)",
+      "url": "https://marcj81.github.io/payslip-calculator/",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Any browser",
+      "browserRequirements": "Requires JavaScript",
+      "inLanguage": "ko",
+      "description": "2026년 최저임금·주휴수당·4대보험·소득세를 자동 계산하고 근로기준법 제48조 법정 기재사항을 갖춘 A4 급여명세서를 만드는 무서버 로컬 웹앱.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
+      "featureList": [
+        "시급제·월급제 주휴수당 자동 계산",
+        "2026년 4대보험 요율 자동 공제",
+        "간이세액 추정 및 3.3% 프리랜서 원천징수",
+        "법정 기재사항 6종을 갖춘 A4 1페이지 명세서",
+        "직원별 프로필 로컬 저장과 JSON 백업"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "5인 미만 사업장도 급여명세서를 줘야 하나요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "네. 근로기준법 제48조 제2항의 임금명세서 교부 의무는 상시 5인 미만 사업장에도 적용됩니다. 미교부 시 500만원 이하의 과태료 대상입니다." }
+        },
+        {
+          "@type": "Question",
+          "name": "주 15시간 미만 알바도 주휴수당이 나오나요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "4주 평균 1주 소정근로시간이 15시간 미만이면 주휴수당이 발생하지 않습니다. 15시간 이상이면서 소정근로일을 개근하면 주휴수당이 발생합니다." }
+        },
+        {
+          "@type": "Question",
+          "name": "5인 미만 사업장은 연장·야간·휴일 가산수당을 줘야 하나요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "근로기준법 제56조의 가산수당은 상시 5인 이상 사업장에 적용됩니다. 5인 미만은 50% 가산 의무가 없어 근로시간에 해당하는 100%만 계산합니다. 다만 주휴수당(제55조 제1항)은 5인 미만에도 적용됩니다." }
+        }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+@font-face{font-family:'PlexKR';src:url('assets/fonts/plexkr-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'PlexKR';src:url('assets/fonts/plexkr-SemiBold.woff2') format('woff2');font-weight:500 600;font-display:swap}
+@font-face{font-family:'PlexKR';src:url('assets/fonts/plexkr-Bold.woff2') format('woff2');font-weight:700 900;font-display:swap}
+
+:root{
+  --font:'PlexKR',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+  --bg:#f5f2ea;
+  --surface:#ffffff;
+  --surface-2:#fbfaf6;
+  --surface-3:#f1eee6;
+  --line:#e6e1d5;
+  --line-strong:#d6cfbe;
+  --ink:#17211f;
+  --ink-2:#3d4a46;
+  --ink-3:#6d7a75;
+  --ink-4:#98a29d;
+  --brand:#0d6b57;
+  --brand-2:#0f8a6e;
+  --brand-soft:#e8f3ef;
+  --brand-line:#bfded3;
+  --amber:#a95a07;
+  --amber-soft:#fdf3e3;
+  --red:#b42318;
+  --red-soft:#fdf1ef;
+  --blue:#1d4f91;
+  --blue-soft:#eef3fb;
+  --r-sm:9px;--r-md:12px;--r-lg:16px;--r-xl:20px;
+  --shadow-1:0 1px 2px rgba(23,33,31,.05),0 1px 3px rgba(23,33,31,.04);
+  --shadow-2:0 18px 40px -24px rgba(23,33,31,.35),0 2px 6px rgba(23,33,31,.05);
+  --topbar-h:64px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;font-family:var(--font);color:var(--ink);background:var(--bg);
+  background-image:
+    radial-gradient(900px 420px at 8% -8%,rgba(13,107,87,.10),rgba(13,107,87,0) 62%),
+    radial-gradient(760px 380px at 96% -10%,rgba(190,146,74,.13),rgba(190,146,74,0) 60%);
+  background-attachment:fixed;
+  font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,p{margin:0}
+button{font-family:inherit}
+a{color:var(--brand)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip-link{position:absolute;left:-999px;top:0;z-index:100;background:#fff;padding:10px 16px;border-radius:0 0 10px 0}
+.skip-link:focus{left:0}
+:focus-visible{outline:3px solid rgba(15,138,110,.45);outline-offset:2px}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;height:var(--topbar-h);
+  display:flex;align-items:center;gap:16px;
+  padding:0 max(16px,calc((100vw - 1500px)/2));
+  background:rgba(252,250,245,.88);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-mark{
+  width:38px;height:38px;border-radius:11px;flex:none;
+  background:linear-gradient(150deg,#0f7a63,#0a5244);
+  color:#fff;display:grid;place-items:center;box-shadow:0 6px 14px -8px rgba(13,107,87,.75);
+}
+.brand-mark svg{width:21px;height:21px}
+.brand-txt{display:flex;flex-direction:column;line-height:1.22;min-width:0}
+.brand-txt b{font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.brand-txt span{font-size:11.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;
+  font-size:11.5px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;
+}
+.badge svg{width:13px;height:13px}
+.badge-lock{background:var(--brand-soft);color:#0a5747;border:1px solid var(--brand-line)}
+.badge-law{background:#f6efe1;color:#7a5316;border:1px solid #e7d9bf}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--line-strong);
+  background:#fff;color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .15s,border-color .15s,transform .06s,color .15s;
+  white-space:nowrap;
+}
+.btn:hover{background:var(--surface-2);border-color:#c6beab}
+.btn:active{transform:translateY(1px)}
+.btn svg{width:15px;height:15px}
+.btn-primary{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 18px -12px rgba(13,107,87,.9)}
+.btn-danger{color:var(--red);border-color:#e6b9b3;background:var(--red-soft)}
+.btn-primary:hover{background:#0a5c4b;border-color:#0a5c4b}
+.btn-ghost{background:transparent;border-color:transparent}
+.btn-ghost:hover{background:var(--surface-3)}
+.btn-sm{height:32px;padding:0 11px;font-size:12px;border-radius:9px}
+.btn-sm svg{width:13px;height:13px}
+.icon-btn{width:38px;padding:0}
+.count-pill{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--brand-soft);color:#0a5747;font-size:11px;font-weight:700}
+
+/* ---------- shell ---------- */
+.shell{max-width:1500px;margin:0 auto;padding:18px 20px 80px}
+.hero{display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap;margin:2px 2px 16px}
+.hero h1{font-size:27px;line-height:1.25;letter-spacing:-.03em;font-weight:800}
+.hero h1 em{font-style:normal;color:var(--brand)}
+.hero p{margin-top:6px;color:var(--ink-3);font-size:13.5px;max-width:640px}
+.hero .hero-law{font-size:11.5px;color:var(--ink-4);margin-top:5px}
+.hero-chips{display:flex;gap:7px;flex-wrap:wrap;margin-left:auto}
+.chip-soft{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:11.5px;color:var(--ink-2);font-weight:600;box-shadow:var(--shadow-1)}
+.chip-soft b{color:var(--brand);font-weight:800}
+.mobile-trust{display:none}
+
+.sample-note{
+  display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:10px 12px;
+  background:var(--amber-soft);border:1px solid #efdcbb;border-radius:12px;color:#6f4a12;font-size:12.5px;
+}
+.sample-note svg{width:16px;height:16px;flex:none}
+.sample-note b{font-weight:700}
+.sample-note button{margin-left:auto;flex:none}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.03fr);gap:20px;align-items:start}
+.col-form{display:flex;flex-direction:column;gap:14px;min-width:0}
+.col-preview{display:flex;flex-direction:column;gap:14px;min-width:0;position:sticky;top:calc(var(--topbar-h) + 14px)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:17px 17px 16px;box-shadow:var(--shadow-1)}
+.card-h{display:flex;align-items:center;gap:9px;margin-bottom:13px;flex-wrap:wrap}
+.card-h .num{
+  width:23px;height:23px;border-radius:50%;background:var(--brand);color:#fff;flex:none;
+  display:grid;place-items:center;font-size:11.5px;font-weight:700;
+}
+.card-h h2{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.card-h .card-hint{margin-left:auto;font-size:11.5px;color:var(--ink-4)}
+.card-h .btn{margin-left:auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.span2{grid-column:1/-1}
+
+.field{display:flex;flex-direction:column;gap:6px;min-width:0;border:0;padding:0;margin:0}
+.field>label,.field>legend,.flabel{font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:-.01em;padding:0}
+.field>legend{margin-bottom:7px}
+.hint{font-size:11.5px;color:var(--ink-3);line-height:1.45}
+.hint em{font-style:normal;color:var(--brand);font-weight:700}
+.hint.warn{color:var(--amber)}
+.hint.err{color:var(--red)}
+input[type=text],input[type=number],input[type=date],input[type=month],select,textarea{
+  width:100%;height:40px;border:1px solid var(--line-strong);border-radius:10px;background:#fff;
+  padding:0 11px;font:inherit;font-size:13.5px;color:var(--ink);transition:border-color .15s,box-shadow .15s;
+}
+input::placeholder{color:#adb5b0}
+input:hover,select:hover{border-color:#c4bba7}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(13,107,87,.13)}
+input[readonly]{background:var(--surface-3);color:var(--ink-2)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' stroke='%236d7a75' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.money-wrap{position:relative}
+.money-wrap input{padding-right:30px}
+.money-wrap .unit{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--ink-4);pointer-events:none}
+.input-row{display:flex;gap:7px;align-items:center}
+.input-row input{flex:1;min-width:0}
+.quick-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.quick{
+  height:26px;padding:0 9px;border-radius:7px;border:1px solid var(--line);background:var(--surface-2);
+  font-size:11.5px;color:var(--ink-2);cursor:pointer;font-weight:600;
+}
+.quick:hover{border-color:var(--brand-line);background:var(--brand-soft);color:#0a5747}
+
+.seg{display:flex;gap:3px;padding:3px;background:var(--surface-3);border-radius:10px;border:1px solid #ebe7dc}
+.seg-item{flex:1;position:relative;cursor:pointer;min-width:0}
+.seg-item input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.seg-item span{
+  display:flex;align-items:center;justify-content:center;gap:4px;height:31px;border-radius:8px;
+  font-size:12px;font-weight:600;color:var(--ink-3);transition:background .15s,color .15s,box-shadow .15s;
+  white-space:nowrap;padding:0 4px;
+}
+.seg-item:hover span{color:var(--ink-2)}
+.seg-item input:checked+span{background:#fff;color:var(--brand);box-shadow:0 1px 3px rgba(23,33,31,.13);font-weight:700}
+.seg-item input:focus-visible+span{outline:3px solid rgba(15,138,110,.45);outline-offset:1px}
+
+.check{display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12.5px;color:var(--ink-2)}
+.check input{width:17px;height:17px;margin:1px 0 0;accent-color:var(--brand);flex:none}
+.check b{font-weight:600}
+.check small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:1px}
+
+.note-box{padding:9px 11px;border-radius:10px;font-size:11.5px;line-height:1.55;border:1px solid transparent}
+.note-box.info{background:var(--blue-soft);border-color:#dbe5f5;color:#274a7c}
+.note-box.brand{background:var(--brand-soft);border-color:var(--brand-line);color:#0a5747}
+.note-box.warn{background:var(--amber-soft);border-color:#efdcbb;color:#6f4a12}
+.note-box.err{background:var(--red-soft);border-color:#f3d6d1;color:#8a2a20}
+.note-box strong{font-weight:700}
+
+/* ---------- summary ---------- */
+.summary{
+  position:relative;overflow:hidden;color:#fff;border-radius:var(--r-xl);padding:18px 18px 16px;
+  background:linear-gradient(148deg,#0f3f36 0%,#0b2f29 52%,#123f36 100%);
+  box-shadow:0 22px 44px -28px rgba(11,47,41,.85),0 2px 8px rgba(11,47,41,.15);
+}
+.summary::after{
+  content:"";position:absolute;right:-70px;top:-80px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(84,190,157,.22),rgba(84,190,157,0) 70%);
+}
+.sum-top{display:flex;align-items:center;gap:8px;font-size:12px;color:#bfe0d5;font-weight:600;position:relative}
+.min-pill{
+  margin-left:auto;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:999px;
+  font-size:11px;font-weight:700;background:rgba(255,255,255,.12);color:#d7f0e7;border:1px solid rgba(255,255,255,.16);white-space:nowrap;
+}
+.min-pill.ok{background:rgba(84,190,157,.18);border-color:rgba(84,190,157,.45);color:#c9f2e2}
+.min-pill.bad{background:rgba(255,150,130,.18);border-color:rgba(255,150,130,.45);color:#ffd9d1}
+.sum-net{display:flex;align-items:baseline;gap:6px;margin-top:5px;position:relative}
+.sum-net b{font-size:38px;line-height:1.1;font-weight:800;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.sum-net span{font-size:15px;font-weight:600;color:#cfe8de}
+.sum-words{font-size:11.5px;color:#9fc8bb;margin-top:3px;position:relative}
+.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;position:relative}
+.sum-grid>div{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:8px 10px}
+.sum-grid span{display:block;font-size:10.5px;color:#a9cdc1;font-weight:600}
+.sum-grid b{display:block;font-size:14px;margin-top:2px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.sum-note{margin-top:11px;font-size:11.5px;color:#b3d5c9;position:relative;line-height:1.5}
+.sum-actions{display:flex;gap:7px;margin-top:12px;position:relative}
+.sum-actions .btn{flex:1;height:34px;font-size:12px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18);color:#e7f5ef}
+.sum-actions .btn:hover{background:rgba(255,255,255,.16)}
+.warnings{display:flex;flex-direction:column;gap:6px;margin-top:10px;position:relative}
+.warning{display:flex;gap:7px;align-items:flex-start;font-size:11.5px;line-height:1.45;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.08);color:#e6f4ee}
+.warning.warn{background:rgba(255,176,84,.16);color:#ffebcd}
+.warning svg{width:14px;height:14px;flex:none;margin-top:1px}
+
+.employer{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow-1);overflow:hidden}
+.employer summary{
+  cursor:pointer;list-style:none;padding:13px 16px;font-size:12.5px;font-weight:700;color:var(--ink-2);
+  display:flex;align-items:center;gap:8px;
+}
+.employer summary::-webkit-details-marker{display:none}
+.employer summary::before{content:"＋";color:var(--brand);font-weight:700}
+.employer[open] summary::before{content:"−"}
+.employer summary span{margin-left:auto;font-weight:600;color:var(--ink-3);font-size:11.5px}
+.employer-body{padding:0 16px 14px;font-size:12px;color:var(--ink-3);line-height:1.6}
+.employer-body table{width:100%;border-collapse:collapse;margin:4px 0 6px}
+.employer-body td{padding:5px 0;border-bottom:1px dashed var(--line)}
+.employer-body td:last-child{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2);font-weight:600}
+.employer-body .total td{border-bottom:0;font-weight:800;color:var(--ink);padding-top:8px}
+
+/* ---------- preview ---------- */
+.preview-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;box-shadow:var(--shadow-1)}
+.preview-head{display:flex;align-items:center;gap:10px;margin-bottom:11px;flex-wrap:wrap}
+.preview-head h2{font-size:13px;font-weight:700}
+.preview-meta{font-size:11px;color:var(--ink-4);display:block;margin-top:1px}
+.preview-actions{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+#btn-zoom-mobile{display:none}
+.stage{background:var(--surface-3);border-radius:12px;padding:0;overflow:hidden;border:1px solid #eae5d9;display:flex;justify-content:center}
+.stage.is-zoomed{overflow-x:auto;justify-content:flex-start}
+.preview-note{font-size:11px;color:var(--ink-4);line-height:1.55;padding:0 2px}
+.preview-note b{color:var(--ink-3);font-weight:700}
+
+/* ---------- paper (A4) ---------- */
+.paper{
+  width:210mm;min-height:297mm;flex:none;background:#fff;color:#14201c;
+  padding:13mm 11mm 10mm;font-size:9.6pt;line-height:1.45;
+  box-shadow:0 10px 30px -18px rgba(23,33,31,.45);
+  transform-origin:top center;
+}
+.p-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:4mm;border-bottom:1.4pt solid #173b32;padding-bottom:4mm}
+.p-co strong{display:block;font-size:11.5pt;font-weight:800;letter-spacing:-.01em}
+.p-co span{display:block;font-size:7.4pt;color:#5c6a64;margin-top:1mm}
+.p-title{font-size:22pt;font-weight:800;letter-spacing:.34em;padding-left:.34em;white-space:nowrap;text-align:center;margin-top:-1.5mm}
+.p-meta{justify-self:end;text-align:right;font-size:7.4pt;color:#5c6a64;line-height:1.7}
+.p-meta b{color:#14201c;font-weight:700}
+.p-info{width:100%;border-collapse:collapse;margin-top:4mm;table-layout:fixed}
+.p-info th,.p-info td{border:.6pt solid #c8cfc9;padding:2.1mm 2mm;font-size:8.4pt;vertical-align:middle;text-align:left}
+.p-info th{background:#f2f5f1;color:#41504a;font-weight:700;width:15%}
+.p-info td{width:35%;font-weight:600}
+.p-grid{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-top:4mm}
+.p-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.p-table th,.p-table td{border:.6pt solid #c8cfc9;padding:2.05mm 1.7mm;font-size:8pt;vertical-align:middle}
+.p-table thead th{background:#e9f0ec;font-weight:800;color:#1d3a31;text-align:center;font-size:7.7pt;letter-spacing:.01em}
+.p-table tbody th{background:#fbfcfa;text-align:left;font-weight:700;color:#33423c;width:26%}
+.p-table tbody td{color:#4b5852}
+.p-table tbody td.calc{width:47%;font-size:7.4pt;line-height:1.4}
+.p-table tbody td.amt{width:27%;text-align:right;font-variant-numeric:tabular-nums;color:#14201c;font-weight:600}
+.p-table tbody td.amt.zero{color:#a6afa9;font-weight:400}
+.p-table tfoot th,.p-table tfoot td{background:#eef3ef;font-weight:800;color:#14201c;padding:2.2mm 1.7mm}
+.p-table tfoot th{text-align:left;font-size:8.2pt}
+.p-table tfoot td{text-align:right;font-variant-numeric:tabular-nums;font-size:9pt}
+.p-net{
+  display:flex;align-items:center;gap:4mm;margin-top:4mm;padding:4mm 4mm;
+  border:1.1pt solid #0d6b57;background:#eff7f3;border-radius:1.2mm;
+}
+.p-net .lbl{font-size:8.4pt;font-weight:800;color:#0a5747;letter-spacing:.02em}
+.p-net .amt{margin-left:auto;font-size:16.5pt;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.p-net .won{font-size:8.4pt;font-weight:700;color:#0a5747}
+.p-net .words{font-size:6.9pt;color:#5c6a64;max-width:52mm;line-height:1.35;text-align:right}
+.p-hours{margin-top:3mm;font-size:7.6pt;color:#4d5b55;display:flex;gap:3mm;flex-wrap:wrap;background:#fafbf9;border:.6pt solid #dfe5df;border-radius:1mm;padding:2.2mm 2.6mm}
+.p-hours b{font-weight:700;color:#22332d}
+.p-notes{margin-top:5mm;font-size:6.9pt;color:#6b7772;line-height:1.65}
+.p-notes p{margin:1.4mm 0 0;padding-left:2.8mm;text-indent:-2.8mm}
+.p-sign{display:flex;gap:8mm;align-items:flex-end;margin-top:12mm;font-size:7.8pt;color:#4d5b55}
+.p-sign span{flex:1;border-bottom:.6pt solid #b9c3bc;padding-bottom:6mm}
+.p-sign em{font-style:normal;color:#8a958f;font-size:6.9pt}
+.p-foot{margin-top:9mm;padding-top:2.4mm;border-top:.6pt dashed #d5dcd6;display:flex;justify-content:space-between;font-size:6.4pt;color:#98a29d}
+
+/* ---------- mobile bar / toast / modal ---------- */
+.mobilebar{
+  display:none;position:fixed;left:0;right:0;bottom:0;z-index:45;
+  background:rgba(252,250,245,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  padding:9px 14px calc(9px + env(safe-area-inset-bottom));gap:10px;align-items:center;
+}
+.mobilebar .mb-net{flex:1;min-width:0}
+.mobilebar .mb-net span{display:block;font-size:10.5px;color:var(--ink-3);font-weight:600}
+.mobilebar .mb-net b{font-size:18px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.mobilebar .btn{height:40px}
+
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);z-index:80;
+  background:#17211f;color:#fff;padding:11px 16px;border-radius:11px;font-size:12.5px;font-weight:600;
+  box-shadow:0 16px 40px -18px rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+  max-width:calc(100vw - 32px);
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.warn{background:#8a4d06}
+.toast.error{background:#8a2a20}
+
+.modal{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:16px}
+.modal-backdrop{position:absolute;inset:0;background:rgba(18,28,25,.45);backdrop-filter:blur(2px)}
+.modal-card{
+  position:relative;width:min(560px,100%);max-height:min(78vh,700px);display:flex;flex-direction:column;
+  background:var(--surface);border-radius:18px;box-shadow:0 30px 80px -30px rgba(0,0,0,.5);overflow:hidden;
+}
+.modal-head{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.modal-head h2{font-size:15px;font-weight:800}
+.modal-head .count-pill{margin-left:2px}
+.modal-head .btn{margin-left:auto}
+.modal-body{padding:12px 14px 16px;overflow:auto}
+.emp-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.emp-item{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.emp-item:hover{border-color:var(--brand-line)}
+.emp-main b{font-size:14px;font-weight:700}
+.emp-main span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:1px}
+.emp-net{text-align:right}
+.emp-net span{display:block;font-size:10.5px;color:var(--ink-4)}
+.emp-net b{font-size:13px;font-variant-numeric:tabular-nums}
+.emp-actions{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end}
+.emp-empty{padding:26px 12px;text-align:center;color:var(--ink-3);font-size:12.5px;line-height:1.7}
+.emp-empty b{display:block;color:var(--ink-2);font-size:13.5px;margin-bottom:3px}
+.modal-foot{padding:0 14px 14px;display:flex;gap:8px;flex-wrap:wrap}
+.modal-foot .hint{flex:1;min-width:180px}
+
+.footer{max-width:1500px;margin:0 auto;padding:26px 20px 40px;color:var(--ink-4);font-size:11.5px;line-height:1.7}
+.footer strong{color:var(--ink-3)}
+.footer .foot-grid{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between;border-top:1px solid var(--line);padding-top:16px}
+
+/* ---------- responsive ---------- */
+@media (max-width:1180px){
+  .layout{grid-template-columns:1fr}
+  .col-preview{position:static;order:2}
+  .col-form{order:1}
+  .hero h1{font-size:24px}
+  .hero-chips{margin-left:0}
+}
+@media (max-width:820px){
+  body{font-size:13.5px}
+  .shell{padding:14px 14px 96px}
+  .topbar{padding:0 14px;gap:8px}
+  .brand-txt span{display:none}
+  .top-actions .btn span{display:none}
+  .top-actions .btn{padding:0 11px}
+  .topbar .badge{display:none}
+  .mobile-trust{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+  .mobile-trust .badge{display:inline-flex;height:26px;font-size:11px}
+  .brand-txt b{font-size:14px}
+  .hero{margin-bottom:12px}
+  .hero h1{font-size:21px}
+  .hero p{font-size:12.5px}
+  .hero-chips{display:none}
+  .layout{gap:14px}
+  .card{padding:15px 14px;border-radius:14px}
+  .grid2{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr 1fr}
+  .summary{padding:16px 15px}
+  .sum-net b{font-size:32px}
+  .sum-grid{grid-template-columns:1fr 1fr}
+  .sum-grid>div:last-child{grid-column:1/-1}
+  .mobilebar{display:flex}
+  #btn-zoom-mobile{display:inline-flex}
+  .preview-card{padding:11px}
+  .preview-actions{width:100%;margin-left:0}
+  .preview-actions .btn{flex:1}
+  .paper{padding:9mm 7mm}
+  .toast{bottom:84px}
+  .footer{padding:20px 14px 90px}
+}
+@media (max-width:430px){
+  .sum-grid b{font-size:12.5px}
+  .sum-actions .btn{font-size:11.5px}
+  .seg-item span{font-size:11.5px}
+}
+
+/* ---------- print ---------- */
+@media print{
+  @page{size:A4;margin:0}
+  html,body{background:#fff!important;background-image:none!important;margin:0!important;padding:0!important}
+  body{font-size:9pt}
+  .topbar,.hero,.sample-note,.mobile-trust,.col-form,.summary,.preview-head,.preview-note,.employer,.btn-import,
+  .footer,.mobilebar,.toast,.modal,.skip-link{display:none!important}
+  .shell{max-width:none;margin:0;padding:0}
+  .layout{display:block}
+  .col-preview{display:block;position:static;gap:0}
+  .preview-card{border:0!important;box-shadow:none!important;padding:0!important;background:#fff!important;border-radius:0!important}
+  .stage{display:block!important;overflow:visible!important;background:#fff!important;border:0!important;border-radius:0!important;padding:0!important}
+  .paper{
+    width:210mm!important;min-height:297mm!important;margin:0!important;border:0!important;border-radius:0!important;
+    padding:13mm 11mm 10mm!important;
+    box-shadow:none!important;zoom:1!important;break-inside:avoid;page-break-inside:avoid;
+  }
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#form-col">본문 바로가기</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-2.5-1.8L13 21l-2.5-1.8L8 21l-2-1.6V3Z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+    </span>
+    <span class="brand-txt"><b>급여명세서 스튜디오</b><span>5인 미만 사장님을 위한 주휴수당·4대보험 1분 계산</span></span>
+  </div>
+  <div class="top-actions">
+    <span class="badge badge-lock" title="입력값은 브라우저에만 저장됩니다">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      서버 전송 0건
+    </span>
+    <span class="badge badge-law">2026년 근로기준법 필수 항목 반영</span>
+    <button class="btn" id="btn-employees" type="button" aria-haspopup="dialog" aria-label="직원 목록 열기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.7-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><path d="M16 5.5a3 3 0 0 1 0 5.6M17.5 14.7c1.8.5 2.9 1.9 3.2 4.3"/></svg>
+      <span>직원 목록</span><span class="count-pill" id="emp-count">0</span>
+    </button>
+    <button class="btn btn-ghost icon-btn" id="btn-export" type="button" title="JSON 백업 내보내기" aria-label="직원 정보 JSON 백업 내보내기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+    </button>
+    <button class="btn btn-primary" id="btn-print-top" type="button" aria-label="급여명세서 인쇄 또는 PDF 저장">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 8V3h10v5"/><rect x="4" y="8" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>
+      <span>인쇄 · PDF</span>
+    </button>
+  </div>
+</header>
+
+<main class="shell">
+  <section class="hero">
+    <div>
+      <h1>알바 급여명세서, <em>1분</em>이면 끝</h1>
+      <p>주휴수당·4대보험·소득세까지 자동 계산. 근로기준법 제48조가 요구하는 기재사항을 모두 담아 A4 한 장으로 바로 인쇄하거나 카톡으로 보내세요.</p>
+      <p class="hero-law">임금명세서 교부 의무는 5인 미만 사업장에도 적용됩니다. 미교부 시 500만원 이하 과태료.</p>
+    </div>
+    <div class="hero-chips" aria-label="주요 기능">
+      <span class="chip-soft"><b>2026</b> 최저시급 10,320원</span>
+      <span class="chip-soft"><b>자동</b> 주휴·4대보험·소득세</span>
+      <span class="chip-soft"><b>A4 1장</b> 인쇄·PDF·텍스트 복사</span>
+    </div>
+  </section>
+
+  <div class="mobile-trust">
+    <span class="badge badge-lock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      서버 전송 0건
+    </span>
+    <span class="badge badge-law">2026년 근로기준법 필수 항목 반영</span>
+  </div>
+
+  <div class="sample-note" id="sample-note" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+    <span><b>예시 값으로 채워뒀어요.</b> 그대로 인쇄하지 말고 우리 사업장·직원 정보로 바꿔 주세요.</span>
+    <button class="btn btn-sm btn-ghost" id="btn-dismiss-sample" type="button">확인</button>
+  </div>
+
+  <div class="layout">
+    <!-- ================= INPUT ================= -->
+    <div class="col-form" id="form-col">
+      <section class="card" aria-labelledby="h-company">
+        <header class="card-h"><span class="num">1</span><h2 id="h-company">사업장 정보</h2><span class="card-hint">명세서 상단에 표시</span></header>
+        <div class="grid2">
+          <div class="field"><label for="f-companyName">상호</label><input id="f-companyName" data-bind="companyName" type="text" autocomplete="organization" placeholder="우리동네 분식"></div>
+          <div class="field"><label for="f-ownerName">대표자</label><input id="f-ownerName" data-bind="ownerName" type="text" placeholder="김민수"></div>
+          <div class="field"><label for="f-bizNo">사업자등록번호</label><input id="f-bizNo" data-bind="bizNo" type="text" inputmode="numeric" placeholder="000-00-00000"></div>
+          <div class="field"><label for="f-companyPhone">연락처</label><input id="f-companyPhone" data-bind="companyPhone" type="text" inputmode="tel" placeholder="02-000-0000"></div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h-emp">
+        <header class="card-h">
+          <span class="num">2</span><h2 id="h-emp">직원 정보</h2>
+          <button class="btn btn-sm" id="btn-save-emp" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>
+            이 직원 저장
+          </button>
+        </header>
+        <div class="grid2">
+          <div class="field"><label for="f-empName">성명 <span class="sr-only">(필수)</span></label><input id="f-empName" data-bind="empName" type="text" autocomplete="name" placeholder="김하늘"></div>
+          <div class="field"><label for="f-birthDate">생년월일</label><input id="f-birthDate" data-bind="birthDate" type="date" max="2026-12-31"></div>
+          <div class="field"><label for="f-empNo">사원번호 <span class="hint" style="font-weight:400">(선택)</span></label><input id="f-empNo" data-bind="empNo" type="text" placeholder="A-01"></div>
+          <div class="field"><label for="f-hireDate">입사일</label><input id="f-hireDate" data-bind="hireDate" type="date" max="2026-12-31"></div>
+          <div class="field span2"><label for="f-department">부서·직책 <span class="hint" style="font-weight:400">(선택)</span></label><input id="f-department" data-bind="department" type="text" placeholder="홀 · 아르바이트"></div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h-work">
+        <header class="card-h"><span class="num">3</span><h2 id="h-work">근무 형태와 임금</h2></header>
+        <div class="grid2">
+          <fieldset class="field">
+            <legend>사업장 규모</legend>
+            <div class="seg">
+              <label class="seg-item"><input type="radio" name="size" value="under5" checked><span>5인 미만</span></label>
+              <label class="seg-item"><input type="radio" name="size" value="over5"><span>5인 이상</span></label>
+            </div>
+          </fieldset>
+          <fieldset class="field">
+            <legend>근로 형태</legend>
+            <div class="seg">
+              <label class="seg-item"><input type="radio" name="workerType" value="employee" checked><span>근로자</span></label>
+              <label class="seg-item"><input type="radio" name="workerType" value="freelance"><span>프리랜서 3.3%</span></label>
+            </div>
+          </fieldset>
+          <fieldset class="field span2">
+            <legend>4대보험</legend>
+            <div class="seg" style="max-width:330px">
+              <label class="seg-item"><input type="radio" name="insurance" value="auto" checked><span>자동</span></label>
+              <label class="seg-item"><input type="radio" name="insurance" value="yes"><span>가입</span></label>
+              <label class="seg-item"><input type="radio" name="insurance" value="no"><span>미가입</span></label>
+            </div>
+            <p class="hint" id="insurance-note">월 60시간 이상이면 국민연금·건강보험 가입 대상으로 자동 계산합니다.</p>
+          </fieldset>
+        </div>
+        <p class="hint" id="size-note" style="margin-top:7px"></p>
+        <div class="grid2" style="margin-top:11px">
+          <div class="field">
+            <label for="f-month">귀속 월</label>
+            <input id="f-month" data-bind="month" type="month" min="2026-01" max="2027-12">
+          </div>
+          <div class="field">
+            <label for="f-payDate">지급일</label>
+            <input id="f-payDate" data-bind="payDate" type="date">
+          </div>
+        </div>
+
+        <div class="grid2" style="margin-top:11px">
+          <fieldset class="field span2">
+            <legend>임금 형태</legend>
+            <div class="seg" style="max-width:280px">
+              <label class="seg-item"><input type="radio" name="payType" value="hourly" checked><span>시급제</span></label>
+              <label class="seg-item"><input type="radio" name="payType" value="monthly"><span>월급제</span></label>
+            </div>
+          </fieldset>
+          <div class="field" id="hourly-field">
+            <label for="f-hourlyWage">시급</label>
+            <div class="money-wrap"><input id="f-hourlyWage" data-bind="hourlyWage" data-money type="text" inputmode="numeric" placeholder="10,320"><span class="unit">원</span></div>
+            <div class="quick-row">
+              <button class="quick" type="button" data-set-wage="10320">최저시급 10,320</button>
+              <button class="quick" type="button" data-set-wage="11000">11,000</button>
+              <button class="quick" type="button" data-set-wage="12000">12,000</button>
+            </div>
+          </div>
+          <div class="field" id="monthly-field" hidden>
+            <label for="f-monthlyWage">월급 (세전)</label>
+            <div class="money-wrap"><input id="f-monthlyWage" data-bind="monthlyWage" data-money type="text" inputmode="numeric" placeholder="2,156,880"><span class="unit">원</span></div>
+            <p class="hint" id="divisor-note"></p>
+          </div>
+          <div class="field">
+            <label for="f-weeklyHours">주 소정근로시간</label>
+            <div class="money-wrap"><input id="f-weeklyHours" data-bind="weeklyHours" type="text" inputmode="decimal" placeholder="20"><span class="unit">시간</span></div>
+            <div class="quick-row">
+              <button class="quick" type="button" data-set-hours="15">15시간</button>
+              <button class="quick" type="button" data-set-hours="20">20시간</button>
+              <button class="quick" type="button" data-set-hours="25">25시간</button>
+              <button class="quick" type="button" data-set-hours="40">40시간</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-workDaysPerWeek">주 소정근로일수</label>
+            <select id="f-workDaysPerWeek" data-bind="workDaysPerWeek">
+              <option value="1">주 1일</option><option value="2">주 2일</option><option value="3">주 3일</option>
+              <option value="4">주 4일</option><option value="5">주 5일</option><option value="6">주 6일</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-totalHours">이번 달 총 근로시간</label>
+            <div class="money-wrap"><input id="f-totalHours" data-bind="totalHours" type="text" inputmode="decimal"><span class="unit">시간</span></div>
+            <p class="hint">비우면 주 소정근로 × 4.345주로 자동 계산</p>
+          </div>
+          <div class="field">
+            <label for="daily-hours">1일 소정근로시간</label>
+            <input id="daily-hours" type="text" readonly tabindex="-1" aria-readonly="true">
+            <p class="hint">주 소정근로 ÷ 근로일수</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h-weekly">
+        <header class="card-h"><span class="num">4</span><h2 id="h-weekly">주휴수당</h2><span class="card-hint">주 15시간 이상 + 개근</span></header>
+        <div class="grid2">
+          <div class="field">
+            <label class="check" for="f-weeklyPay">
+              <input id="f-weeklyPay" data-bind="weeklyPay" type="checkbox" checked>
+              <span><b>주휴수당 지급</b><small>끄면 명세서에서 0원 처리</small></span>
+            </label>
+          </div>
+          <div class="field">
+            <label for="f-weeklyHolidayDow">주휴일</label>
+            <select id="f-weeklyHolidayDow" data-bind="weeklyHolidayDow">
+              <option value="0">일요일</option><option value="1">월요일</option><option value="2">화요일</option>
+              <option value="3">수요일</option><option value="4">목요일</option><option value="5">금요일</option><option value="6">토요일</option>
+            </select>
+          </div>
+          <div class="field span2">
+            <label class="check" for="f-attendanceFull">
+              <input id="f-attendanceFull" data-bind="attendanceFull" type="checkbox" checked>
+              <span><b>이번 달 소정근로일 개근</b><small>결근이 있으면 주휴수당이 발생하지 않습니다</small></span>
+            </label>
+          </div>
+          <div class="field span2" id="weekly-in-monthly-wrap" hidden>
+            <label class="check" for="f-weeklyInMonthly">
+              <input id="f-weeklyInMonthly" data-bind="weeklyInMonthly" type="checkbox" checked>
+              <span><b>월급에 주휴수당 포함</b><small>월급을 기본급과 주휴수당으로 나눠 표시합니다</small></span>
+            </label>
+          </div>
+        </div>
+        <div class="note-box brand" id="weekly-explain" style="margin-top:10px"></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-allow">
+        <header class="card-h"><span class="num">5</span><h2 id="h-allow">수당과 공제</h2><span class="card-hint">0이면 비워두세요</span></header>
+        <div class="grid3">
+          <div class="field">
+            <label for="f-overtimeHours">연장근로</label>
+            <div class="money-wrap"><input id="f-overtimeHours" data-bind="overtimeHours" type="text" inputmode="decimal" placeholder="0"><span class="unit">h</span></div>
+          </div>
+          <div class="field">
+            <label for="f-nightHours">야간근로</label>
+            <div class="money-wrap"><input id="f-nightHours" data-bind="nightHours" type="text" inputmode="decimal" placeholder="0"><span class="unit">h</span></div>
+          </div>
+          <div class="field">
+            <label for="f-holidayHours">휴일근로</label>
+            <div class="money-wrap"><input id="f-holidayHours" data-bind="holidayHours" type="text" inputmode="decimal" placeholder="0"><span class="unit">h</span></div>
+          </div>
+        </div>
+        <p class="hint" id="premium-note" style="margin-top:7px"></p>
+        <div class="grid2" style="margin-top:11px">
+          <div class="field">
+            <label for="f-mealAllowance">식대 <span class="hint" style="font-weight:400">월 20만원 비과세</span></label>
+            <div class="money-wrap"><input id="f-mealAllowance" data-bind="mealAllowance" data-money type="text" inputmode="numeric" placeholder="0"><span class="unit">원</span></div>
+          </div>
+          <div class="field">
+            <label for="f-transportAllowance">교통비 <span class="hint" style="font-weight:400">월 20만원 비과세(자가운전보조금)</span></label>
+            <div class="money-wrap"><input id="f-transportAllowance" data-bind="transportAllowance" data-money type="text" inputmode="numeric" placeholder="0"><span class="unit">원</span></div>
+          </div>
+          <div class="field">
+            <label for="f-otherAllowance">기타 수당 <span class="hint" style="font-weight:400">과세</span></label>
+            <div class="money-wrap"><input id="f-otherAllowance" data-bind="otherAllowance" data-money type="text" inputmode="numeric" placeholder="0"><span class="unit">원</span></div>
+          </div>
+          <div class="field">
+            <label for="f-otherDeduction">기타 공제 <span class="hint" style="font-weight:400">상환·학자금 등</span></label>
+            <div class="money-wrap"><input id="f-otherDeduction" data-bind="otherDeduction" data-money type="text" inputmode="numeric" placeholder="0"><span class="unit">원</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h-tax">
+        <header class="card-h"><span class="num">6</span><h2 id="h-tax">소득세</h2><span class="card-hint">간이세액표 기준</span></header>
+        <div class="grid2">
+          <fieldset class="field span2">
+            <legend>계산 방식</legend>
+            <div class="seg" style="max-width:340px">
+              <label class="seg-item"><input type="radio" name="taxMode" value="auto" checked><span>자동 추정</span></label>
+              <label class="seg-item"><input type="radio" name="taxMode" value="manual"><span>간이세액표 직접 입력</span></label>
+            </div>
+          </fieldset>
+          <div class="field">
+            <label for="f-dependents">부양가족 수 <span class="hint" style="font-weight:400">본인 제외</span></label>
+            <select id="f-dependents" data-bind="dependents">
+              <option value="0">0명 (본인만)</option><option value="1">1명</option><option value="2">2명</option>
+              <option value="3">3명</option><option value="4">4명</option><option value="5">5명</option>
+            </select>
+          </div>
+          <div class="field" id="manual-tax-field" hidden>
+            <label for="f-manualIncomeTax">이번 달 소득세</label>
+            <div class="money-wrap"><input id="f-manualIncomeTax" data-bind="manualIncomeTax" data-money type="text" inputmode="numeric" placeholder="0"><span class="unit">원</span></div>
+          </div>
+        </div>
+        <p class="note-box info" id="tax-note" style="margin-top:10px"></p>
+      </section>
+    </div>
+
+    <!-- ================= OUTPUT ================= -->
+    <div class="col-preview">
+      <section class="summary" id="summary" aria-live="polite" aria-atomic="true">
+        <div class="sum-top">
+          <span id="sum-period">2026년 11월 실수령액</span>
+          <span class="min-pill" id="min-badge">계산 중</span>
+        </div>
+        <div class="sum-net"><b id="sum-net">0</b><span>원</span></div>
+        <div class="sum-words" id="sum-words"></div>
+        <div class="sum-grid">
+          <div><span>지급 총액</span><b id="sum-gross">0원</b></div>
+          <div><span>공제 합계</span><b id="sum-deduct">0원</b></div>
+          <div><span>4대보험</span><b id="sum-insurance">0원</b></div>
+        </div>
+        <div class="sum-note" id="sum-note"></div>
+        <div class="warnings" id="warnings"></div>
+        <div class="sum-actions">
+          <button class="btn" id="btn-copy-sum" type="button" aria-label="급여명세서를 카톡·문자용 텍스트로 복사">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="12" rx="2"/><path d="M15 5.5H6a1.5 1.5 0 0 0-1.5 1.5v9"/></svg>
+            카톡·문자용 복사
+          </button>
+          <button class="btn" id="btn-print-sum" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="7" rx="2"/><path d="M7 14h10v7H7z"/></svg>
+            인쇄 · PDF
+          </button>
+        </div>
+      </section>
+
+      <details class="employer">
+        <summary>사장님 부담 인건비 <span id="employer-total-label">참고</span></summary>
+        <div class="employer-body">
+          <table>
+            <tbody>
+              <tr><td>국민연금 (4.75%)</td><td id="er-pension">0원</td></tr>
+              <tr><td>건강보험 (3.595%)</td><td id="er-health">0원</td></tr>
+              <tr><td>장기요양 (건강보험료의 13.14%)</td><td id="er-ltc">0원</td></tr>
+              <tr><td>고용보험 (0.9% + 고용안정 0.25%)</td><td id="er-employment">0원</td></tr>
+              <tr class="total"><td>사업주 부담 합계</td><td id="er-total">0원</td></tr>
+            </tbody>
+          </table>
+          <p>산재보험은 업종별 요율이 달라 제외했습니다. 150인 미만 사업장의 고용안정·직업능력개발 0.25%를 가정했습니다.</p>
+        </div>
+      </details>
+
+      <section class="preview-card">
+        <header class="preview-head">
+          <div>
+            <h2>급여명세서 미리보기</h2>
+            <span class="preview-meta">A4 210×297mm · 1페이지 · <span id="zoom-label">100%</span></span>
+          </div>
+          <div class="preview-actions">
+            <button class="btn btn-sm" id="btn-zoom-mobile" type="button">확대</button>
+            <button class="btn btn-sm" id="btn-copy" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="12" rx="2"/><path d="M15 5.5H6a1.5 1.5 0 0 0-1.5 1.5v9"/></svg>
+              텍스트 복사
+            </button>
+            <button class="btn btn-sm btn-primary" id="btn-print" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="7" rx="2"/><path d="M7 14h10v7H7z"/></svg>
+              인쇄 · PDF 저장
+            </button>
+          </div>
+        </header>
+        <div class="stage" id="stage">
+          <section class="paper" id="paper" aria-label="급여명세서 A4 미리보기">
+            <div class="p-head">
+              <div class="p-co"><strong id="p-company">우리동네 분식</strong><span id="p-co-sub">대표 김민수 · 123-45-67890 · 02-1234-5678</span></div>
+              <div class="p-title">급여명세서</div>
+              <div class="p-meta">
+                <div>귀속월 <b id="p-month">2026년 11월</b></div>
+                <div>지급일 <b id="p-paydate">2026-12-10</b></div>
+                <div id="p-mode">근로자 · 5인 미만</div>
+              </div>
+            </div>
+
+            <table class="p-info">
+              <tbody>
+                <tr><th>성명</th><td id="p-name">김하늘</td><th>생년월일</th><td id="p-birth">2001-03-14</td></tr>
+                <tr><th>사원번호</th><td id="p-empno">A-01</td><th>입사일</th><td id="p-hire">2025-05-02</td></tr>
+                <tr><th>부서·직책</th><td id="p-dept">홀</td><th>근로형태</th><td id="p-worktype">시급제 · 주 20시간</td></tr>
+                <tr><th>총 근로시간</th><td id="p-totalhours">86.9시간</td><th>연장·야간·휴일</th><td id="p-extra">0 · 0 · 0시간</td></tr>
+              </tbody>
+            </table>
+
+            <div class="p-grid">
+              <table class="p-table">
+                <thead><tr><th>지급 항목</th><th>산출내역</th><th>금액(원)</th></tr></thead>
+                <tbody id="p-earn-body"></tbody>
+                <tfoot><tr><th colspan="2">지급 총액</th><td id="p-gross">0</td></tr></tfoot>
+              </table>
+              <table class="p-table">
+                <thead><tr><th>공제 항목</th><th>산출내역</th><th>금액(원)</th></tr></thead>
+                <tbody id="p-ded-body"></tbody>
+                <tfoot><tr><th colspan="2">공제 총액</th><td id="p-deduct">0</td></tr></tfoot>
+              </table>
+            </div>
+
+            <div class="p-net">
+              <span class="lbl">실수령액</span>
+              <span class="words" id="p-net-words">일금 영원정</span>
+              <span class="amt" id="p-net">0</span><span class="won">원</span>
+            </div>
+
+            <div class="p-hours" id="p-hours">
+              <span>소정근로 <b>86.9시간</b></span><span>연장 <b>0시간</b></span><span>야간 <b>0시간</b></span><span>휴일 <b>0시간</b></span><span>주휴 <b>5시간 × 5회</b></span>
+            </div>
+
+            <div class="p-notes">
+              <p>· 본 명세서는 「근로기준법」 제48조 제2항 및 같은 법 시행령 제27조의2에 따른 임금명세서입니다.</p>
+              <p>· 2026년 근로자 부담 요율: 국민연금 4.75%, 건강보험 3.595%, 장기요양보험(건강보험료의 13.14%), 고용보험 0.9%.</p>
+              <p>· 소득세는 국세청 근로소득 간이세액표를 참고한 추정치이며, 실제 원천징수액과 차이가 있을 수 있습니다.</p>
+            </div>
+
+            <div class="p-sign">
+              <span>근로자 확인 (서명) <em>위 내용과 같이 지급받았음을 확인합니다.</em></span>
+              <span>사용자 (서명·직인)</span>
+            </div>
+            <div class="p-foot"><span id="p-foot-left">급여명세서 스튜디오 · 서버 전송 0건</span><span id="p-foot-right">발급일 2026-11-21</span></div>
+          </section>
+        </div>
+      </section>
+
+      <p class="preview-note">
+        <b>인쇄 팁:</b> 인쇄 창에서 용지를 <b>A4</b>, 배율 <b>100%</b>(기본값)로 두고 ‘PDF로 저장’을 고르면 그대로 한 장이 나옵니다. 입력값은 이 브라우저에만 저장되고 어디로도 전송되지 않습니다.
+      </p>
+      <button class="btn btn-import" id="btn-import" type="button" style="align-self:flex-start">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        백업 JSON 불러오기
+      </button>
+      <input type="file" id="file-import" accept="application/json,.json" hidden>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="foot-grid">
+    <p><strong>급여명세서 스튜디오</strong> · 2026년 근로기준법·4대보험 요율 기준의 참고 계산기입니다.<br>
+    세무사·노무사의 공식 검토를 거치지 않았으며, 신고·지급의 최종 판단과 책임은 사업주에게 있습니다. 실제 원천징수는 국세청 근로소득 간이세액표, 보험료는 4대보험 고지서를 확인하세요.</p>
+    <p>입력한 정보는 브라우저 저장소(localStorage)에만 남고 서버로 전송되지 않습니다.<br><a href="privacy.html">개인정보 처리방침</a> · © 2026 Payslip Studio</p>
+  </div>
+</footer>
+
+<div class="mobilebar" id="mobilebar">
+  <div class="mb-net"><span id="mb-label">2026년 11월 실수령액</span><b id="mb-net">0원</b></div>
+  <button class="btn" id="mb-paper" type="button">명세서</button>
+  <button class="btn btn-primary" id="mb-print" type="button">PDF</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal" id="emp-modal" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="emp-modal-title">
+    <div class="modal-head">
+      <h2 id="emp-modal-title">직원 목록</h2><span class="count-pill" id="emp-count-2">0</span>
+      <button class="btn btn-sm btn-ghost icon-btn" id="btn-close-modal" type="button" aria-label="직원 목록 닫기">✕</button>
+    </div>
+    <div class="modal-body">
+      <ul class="emp-list" id="emp-list"></ul>
+      <div class="emp-empty" id="emp-empty" hidden>
+        <b>아직 저장한 직원이 없어요</b>
+        왼쪽 ‘이 직원 저장’을 누르면 다음 달에 시간만 바꿔 10초 만에 다시 발급할 수 있어요.
+      </div>
+    </div>
+    <div class="modal-foot">
+      <p class="hint">저장된 정보는 이 브라우저에만 있습니다. 기기를 바꾸려면 상단의 내보내기로 JSON 백업을 받아 두세요.</p>
+      <button class="btn btn-sm" id="btn-new-emp" type="button">새 직원 입력</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==CORE-START== */
+const RULES = Object.freeze({
+  year: 2026,
+  minHourly: 10320,
+  minMonthly209: 2156880,
+  monthlyStdHours: 209,
+  weeksPerMonth: 4.345,
+  pensionRate: 0.0475,
+  healthRate: 0.03595,
+  ltcRate: 0.9448,
+  healthRatePct: 7.19,
+  employmentRate: 0.009,
+  employerEmploymentRate: 0.0115,
+  freelanceRate: 0.03,
+  freelanceLocalRate: 0.003,
+  localTaxRate: 0.1,
+  mealLimit: 200000,
+  vehicleLimit: 200000,
+  pensionLow: 410000,
+  pensionHigh: 6590000,
+  pensionLowH1: 400000,
+  pensionHighH1: 6370000,
+  healthMin: 10080,
+  healthMax: 4591740,
+  premiumOver5: 0.5,
+  holidayOver8: 0.5
+});
+
+function num(v){
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, ''));
+  return Number.isFinite(n) ? n : 0;
+}
+function floorTo(n, unit){ return Math.floor((n + 1e-7) / unit) * unit; }
+function floor10(n){ return Math.max(0, floorTo(num(n), 10)); }
+function roundWon(n){ return Math.round(num(n)); }
+function fmtInt(n){
+  const v = Math.round(num(n));
+  const s = String(Math.abs(v));
+  return (v < 0 ? '-' : '') + s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+function fmtQty(n){
+  const v = Math.round(num(n) * 100) / 100;
+  return Number.isInteger(v) ? String(v) : String(v);
+}
+function clamp(n, lo, hi){ return Math.min(hi, Math.max(lo, n)); }
+
+function countWeekday(year, month, dow){
+  const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  let count = 0;
+  for (let d = 1; d <= days; d += 1){
+    if (new Date(Date.UTC(year, month - 1, d)).getUTCDay() === clamp(Math.round(dow), 0, 6)) count += 1;
+  }
+  return count;
+}
+
+function numberToKorean(value){
+  let n = Math.floor(Math.abs(num(value)));
+  if (!n) return '영';
+  const D = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+  const S = ['', '십', '백', '천'];
+  const B = ['', '만', '억', '조'];
+  let out = '';
+  let group = 0;
+  while (n > 0){
+    const part = n % 10000;
+    if (part){
+      let body = '';
+      let p = part;
+      for (let i = 0; i < 4; i += 1){
+        const d = p % 10;
+        if (d) body = D[d] + S[i] + body;
+        p = Math.floor(p / 10);
+      }
+      out = body + B[group] + out;
+    }
+    n = Math.floor(n / 10000);
+    group += 1;
+  }
+  return out;
+}
+
+function laborIncomeDeduction(gross){
+  const g = Math.max(0, num(gross));
+  if (g <= 5000000) return Math.min(g * 0.7, 3500000);
+  if (g <= 15000000) return 3500000 + (g - 5000000) * 0.4;
+  if (g <= 45000000) return 7500000 + (g - 15000000) * 0.15;
+  if (g <= 100000000) return 12000000 + (g - 45000000) * 0.05;
+  return 14750000 + (g - 100000000) * 0.02;
+}
+
+function progressiveTax(base){
+  const b = Math.max(0, num(base));
+  const brackets = [
+    [14000000, 0, 0.06],
+    [50000000, 840000, 0.15],
+    [88000000, 6240000, 0.24],
+    [150000000, 15360000, 0.35],
+    [300000000, 37060000, 0.38],
+    [500000000, 94060000, 0.40],
+    [1000000000, 174060000, 0.42],
+    [Infinity, 384060000, 0.45]
+  ];
+  let lower = 0;
+  for (const [upper, base0, rate] of brackets){
+    if (b <= upper) return base0 + (b - lower) * rate;
+    lower = upper;
+  }
+  return 0;
+}
+
+function creditLimit(annualGross){
+  const g = Math.max(0, num(annualGross));
+  if (g <= 33000000) return 740000;
+  if (g <= 70000000) return Math.max(660000, 740000 - (g - 33000000) * 0.008);
+  return Math.max(500000, 660000 - (g - 70000000) * 0.005);
+}
+
+function estimateIncomeTax(monthlyTaxable, dependents, pension, health, ltc){
+  const monthly = Math.max(0, num(monthlyTaxable));
+  const annualGross = monthly * 12;
+  if (annualGross <= 0) return 0;
+  const laborIncome = Math.max(0, annualGross - laborIncomeDeduction(annualGross));
+  const personal = 1500000 * (1 + Math.max(0, Math.round(num(dependents))));
+  const insurance = Math.max(0, num(pension) + num(health) + num(ltc)) * 12;
+  const base = Math.max(0, laborIncome - personal - insurance);
+  const tax = progressiveTax(base);
+  const credit = Math.min(tax * 0.55, creditLimit(annualGross));
+  return floor10(Math.max(0, tax - credit) / 12);
+}
+
+function buildCopyText(raw, r){
+  const s = raw || {};
+  const calc = r || calcPayslip(raw);
+  const lines = [];
+  lines.push(`[급여명세서] ${calc.year}년 ${calc.monthNum}월`);
+  lines.push(`${s.companyName || '사업장'}${s.ownerName ? ` (대표 ${s.ownerName})` : ''}`);
+  lines.push(`성명: ${s.empName || '-'}${s.empNo ? ` (사원번호 ${s.empNo})` : ''}`);
+  lines.push(`지급일: ${s.payDate || '-'} · 근로형태: ${calc.workTypeLabel}`);
+  lines.push('');
+  lines.push('■ 지급 내역');
+  calc.earnRows.forEach(row => {
+    if (row.amount > 0) lines.push(`${row.label} ${row.calc ? `(${row.calc}) ` : ''}${fmtInt(row.amount)}원`);
+  });
+  lines.push(`지급 총액 ${fmtInt(calc.gross)}원`);
+  lines.push('');
+  lines.push('■ 공제 내역');
+  calc.dedRows.forEach(row => {
+    if (row.amount > 0) lines.push(`${row.label} ${row.calc ? `(${row.calc}) ` : ''}${fmtInt(row.amount)}원`);
+  });
+  lines.push(`공제 총액 ${fmtInt(calc.deductionTotal)}원`);
+  lines.push('');
+  lines.push(`■ 실수령액 ${fmtInt(calc.netPay)}원`);
+  lines.push(`(일금 ${numberToKorean(calc.netPay)}원정)`);
+  if (calc.incomeTaxEstimated) lines.push('※ 소득세는 간이세액표를 참고한 추정치입니다.');
+  return lines.join('\n');
+}
+
+function notInsuredReason(mode, hours){
+  if (mode === 'no') return '미가입 설정';
+  return `월 ${fmtQty(hours)}시간 · 60시간 미만`;
+}
+
+function calcPayslip(raw){
+  const s = raw || {};
+  const isOver5 = s.size === 'over5';
+  const isFreelance = s.workerType === 'freelance';
+  const insuranceMode = ['auto', 'yes', 'no'].includes(s.insurance) ? s.insurance : 'auto';
+  const payType = s.payType === 'monthly' ? 'monthly' : 'hourly';
+  const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(String(s.month || '')) ? String(s.month) : '2026-11';
+  const year = Number(month.slice(0, 4));
+  const monthNum = Number(month.slice(5, 7));
+  const daysInMonth = new Date(Date.UTC(year, monthNum, 0)).getUTCDate();
+  const holidayDow = clamp(Math.round(num(s.weeklyHolidayDow)), 0, 6);
+  const holidayCount = countWeekday(year, monthNum, holidayDow);
+
+  const weeklyHours = Math.max(0, num(s.weeklyHours));
+  const workDays = clamp(Math.round(num(s.workDaysPerWeek)) || 1, 1, 7);
+  const dailyHours = workDays > 0 ? weeklyHours / workDays : 0;
+  const attendance = s.attendanceFull !== false;
+  const weeklyEligible = !isFreelance && attendance && weeklyHours >= 15;
+  const weeklyPaidHours = weeklyEligible ? Math.min(8, dailyHours) : 0;
+  const payWeekly = s.weeklyPay !== false;
+  const includeInMonthly = payType === 'monthly' && s.weeklyInMonthly !== false;
+
+  const contractHours = Math.round(weeklyHours * RULES.weeksPerMonth * 100) / 100;
+  const insuranceAuto = contractHours >= 60;
+  const healthApplies = !isFreelance && insuranceMode !== 'no' && (insuranceMode === 'yes' || insuranceAuto);
+  const employmentApplies = !isFreelance && insuranceMode !== 'no';
+  const autoHours = Math.round(weeklyHours * RULES.weeksPerMonth * 100) / 100;
+  let totalHours = num(s.totalHours) > 0 ? num(s.totalHours) : autoHours;
+
+  let hourlyWage = Math.max(0, num(s.hourlyWage));
+  const monthlyWage = Math.max(0, num(s.monthlyWage));
+  const paidWeeklyHours = weeklyEligible && (payWeekly || payType === 'monthly') ? weeklyPaidHours : 0;
+  const divisor = weeklyHours >= 40
+    ? RULES.monthlyStdHours
+    : Math.round((weeklyHours + paidWeeklyHours) * RULES.weeksPerMonth * 100) / 100;
+
+  if (payType === 'monthly'){
+    hourlyWage = (monthlyWage > 0 && divisor > 0) ? monthlyWage / divisor : 0;
+    totalHours = Math.round(weeklyHours * RULES.weeksPerMonth * 100) / 100;
+  }
+
+  const weeklyPayPerWeek = (weeklyEligible && payWeekly) ? roundWon(hourlyWage * weeklyPaidHours) : 0;
+  let weeklyPay = weeklyPayPerWeek * holidayCount;
+  let basePay = 0;
+
+  if (payType === 'hourly'){
+    basePay = roundWon(hourlyWage * totalHours);
+  } else if (includeInMonthly){
+    weeklyPay = Math.min(weeklyPay, monthlyWage);
+    basePay = Math.max(0, roundWon(monthlyWage - weeklyPay));
+  } else {
+    basePay = roundWon(monthlyWage);
+  }
+
+  const overtimeHours = Math.max(0, num(s.overtimeHours));
+  const nightHours = Math.max(0, num(s.nightHours));
+  const holidayHours = Math.max(0, num(s.holidayHours));
+  const premium = isOver5 ? RULES.premiumOver5 : 0;
+  const overtimeRate = 1 + premium;
+  const nightRate = 1 + premium;
+  const holidayWithin = Math.min(8, holidayHours);
+  const holidayOver = Math.max(0, holidayHours - 8);
+  const holidayWithinRate = 1 + premium;
+  const holidayOverRate = 1 + premium + (isOver5 ? RULES.holidayOver8 : 0);
+
+  const overtimePay = roundWon(hourlyWage * overtimeHours * overtimeRate);
+  const nightPay = roundWon(hourlyWage * nightHours * nightRate);
+  const holidayPay = roundWon(
+    hourlyWage * (holidayWithin * holidayWithinRate + holidayOver * holidayOverRate)
+  );
+
+  const meal = Math.max(0, num(s.mealAllowance));
+  const vehicle = Math.max(0, num(s.transportAllowance));
+  const otherAllowance = Math.max(0, num(s.otherAllowance));
+  const mealTaxFree = isFreelance ? 0 : Math.min(meal, RULES.mealLimit);
+  const vehicleTaxFree = isFreelance ? 0 : Math.min(vehicle, RULES.vehicleLimit);
+  const nonTaxable = mealTaxFree + vehicleTaxFree;
+  const taxable = basePay + weeklyPay + overtimePay + nightPay + holidayPay
+    + (meal - mealTaxFree) + (vehicle - vehicleTaxFree) + otherAllowance;
+  const gross = taxable + nonTaxable;
+
+  let pension = 0, health = 0, ltc = 0, employment = 0;
+  let incomeTax = 0, localTax = 0;
+  if (!isFreelance && taxable > 0){
+    if (healthApplies){
+      const half = month < '2026-07';
+      const low = half ? RULES.pensionLowH1 : RULES.pensionLow;
+      const high = half ? RULES.pensionHighH1 : RULES.pensionHigh;
+      const pensionBase = clamp(floorTo(taxable, 1000), low, high);
+      pension = Math.floor(pensionBase * RULES.pensionRate);
+      health = clamp(floor10(taxable * RULES.healthRate), RULES.healthMin, RULES.healthMax);
+      ltc = floor10(health * (RULES.ltcRate / RULES.healthRatePct));
+    }
+    if (employmentApplies) employment = floor10(taxable * RULES.employmentRate);
+  }
+  const incomeTaxEstimated = !isFreelance && s.taxMode !== 'manual';
+  if (isFreelance){
+    incomeTax = floor10(taxable * RULES.freelanceRate);
+    localTax = floor10(taxable * RULES.freelanceLocalRate);
+  } else if (s.taxMode === 'manual'){
+    incomeTax = Math.max(0, roundWon(num(s.manualIncomeTax)));
+    localTax = floor10(incomeTax * RULES.localTaxRate);
+  } else {
+    incomeTax = estimateIncomeTax(taxable, num(s.dependents), pension, health, ltc);
+    localTax = floor10(incomeTax * RULES.localTaxRate);
+  }
+
+  const otherDeduction = Math.max(0, roundWon(num(s.otherDeduction)));
+  const deductionTotal = pension + health + ltc + employment + incomeTax + localTax + otherDeduction;
+  const netRaw = gross - deductionTotal;
+  const netPay = Math.max(0, netRaw);
+
+  const employerEmployment = employmentApplies ? floor10(taxable * RULES.employerEmploymentRate) : 0;
+  const employerTotal = isFreelance ? 0 : pension + health + ltc + employerEmployment;
+
+  const effectiveHourly = payType === 'monthly'
+    ? (divisor > 0 ? monthlyWage / divisor : 0)
+    : hourlyWage;
+  const minOk = effectiveHourly === 0 ? null : effectiveHourly + 0.001 >= RULES.minHourly;
+  const minGap = Math.max(0, RULES.minHourly - effectiveHourly);
+
+  const baseCalc = payType === 'hourly'
+    ? `${fmtQty(totalHours)}시간 × ${fmtInt(hourlyWage)}원`
+    : includeInMonthly
+      ? `월급 ${fmtInt(monthlyWage)}원 − 주휴 ${fmtInt(weeklyPay)}원`
+      : `월급 ${fmtInt(monthlyWage)}원`;
+  const weeklyCalc = (weeklyEligible && payWeekly)
+    ? includeInMonthly
+      ? `월급 포함 · ${fmtQty(weeklyPaidHours)}시간 × ${holidayCount}회`
+      : `${fmtQty(weeklyPaidHours)}시간 × ${fmtInt(hourlyWage)}원 × ${holidayCount}회`
+    : '—';
+
+  const earnRows = [
+    { key: 'base', label: '기본급', calc: basePay > 0 ? baseCalc : '–', amount: basePay, taxable: true },
+    { key: 'weekly', label: '주휴수당', calc: weeklyPay > 0 ? weeklyCalc : '–', amount: weeklyPay, taxable: true },
+    { key: 'overtime', label: '연장근로수당', calc: overtimePay > 0 ? `${fmtQty(overtimeHours)}시간 × ${fmtInt(hourlyWage)}원 × ${Math.round(overtimeRate * 100)}%` : '–', amount: overtimePay, taxable: true },
+    { key: 'night', label: '야간근로수당', calc: nightPay > 0 ? `${fmtQty(nightHours)}시간 × ${fmtInt(hourlyWage)}원 × ${Math.round(nightRate * 100)}%` : '–', amount: nightPay, taxable: true },
+    { key: 'holiday', label: '휴일근로수당', calc: holidayPay > 0
+      ? (holidayOver > 0
+        ? `8h 이내 ${fmtQty(holidayWithin)}시간 × ${Math.round(holidayWithinRate * 100)}% + 초과 ${fmtQty(holidayOver)}시간 × ${Math.round(holidayOverRate * 100)}%`
+        : `${fmtQty(holidayHours)}시간 × ${fmtInt(hourlyWage)}원 × ${Math.round(holidayWithinRate * 100)}%`)
+      : '–', amount: holidayPay, taxable: true },
+    { key: 'meal', label: isFreelance ? '식대(과세)' : '식대(비과세)', calc: meal > 0 ? (isFreelance ? '사업소득 · 전액 과세' : `비과세 ${fmtInt(mealTaxFree)}원${meal > mealTaxFree ? ` · 과세 ${fmtInt(meal - mealTaxFree)}원` : ''}`) : '–', amount: meal, taxable: false },
+    { key: 'transport', label: isFreelance ? '교통비(과세)' : '교통비(비과세)', calc: vehicle > 0 ? (isFreelance ? '사업소득 · 전액 과세' : `비과세 ${fmtInt(vehicleTaxFree)}원${vehicle > vehicleTaxFree ? ` · 과세 ${fmtInt(vehicle - vehicleTaxFree)}원` : ''}`) : '–', amount: vehicle, taxable: false },
+    { key: 'other', label: '기타 수당', calc: otherAllowance > 0 ? '과세' : '–', amount: otherAllowance, taxable: true }
+  ];
+
+  const dedRows = isFreelance
+    ? [
+      { key: 'pension', label: '국민연금', calc: '프리랜서 미적용', amount: 0 },
+      { key: 'health', label: '건강보험', calc: '프리랜서 미적용', amount: 0 },
+      { key: 'ltc', label: '장기요양보험', calc: '프리랜서 미적용', amount: 0 },
+      { key: 'employment', label: '고용보험', calc: '프리랜서 미적용', amount: 0 },
+      { key: 'income', label: '소득세(3%)', calc: `과세 ${fmtInt(taxable)}원 × 3%`, amount: incomeTax },
+      { key: 'local', label: '지방소득세(0.3%)', calc: `과세 ${fmtInt(taxable)}원 × 0.3%`, amount: localTax },
+      { key: 'other', label: '기타 공제', calc: otherDeduction > 0 ? '사용자 입력' : '–', amount: otherDeduction }
+    ]
+    : [
+      { key: 'pension', label: '국민연금', calc: healthApplies ? taxPensionText(taxable, month) : notInsuredReason(insuranceMode, contractHours), amount: pension },
+      { key: 'health', label: '건강보험', calc: healthApplies ? `${fmtInt(taxable)}원 × 3.595%` : notInsuredReason(insuranceMode, contractHours), amount: health },
+      { key: 'ltc', label: '장기요양보험', calc: healthApplies ? `건강보험료 × 13.14%` : notInsuredReason(insuranceMode, contractHours), amount: ltc },
+      { key: 'employment', label: '고용보험', calc: employmentApplies ? `${fmtInt(taxable)}원 × 0.9%` : notInsuredReason(insuranceMode, contractHours), amount: employment },
+      { key: 'income', label: '근로소득세', calc: s.taxMode === 'manual' ? '간이세액표 입력' : '간이세액 추정', amount: incomeTax },
+      { key: 'local', label: '지방소득세', calc: `소득세 × 10%`, amount: localTax },
+      { key: 'other', label: '기타 공제', calc: otherDeduction > 0 ? '사용자 입력' : '–', amount: otherDeduction }
+    ];
+
+  const warnings = [];
+  if (minOk === false) warnings.push({ level: 'warn', text: `시급이 2026년 최저임금 ${fmtInt(RULES.minHourly)}원보다 ${fmtInt(minGap)}원 낮습니다.` });
+  if (weeklyHours > 0 && weeklyHours < 15) warnings.push({ level: 'info', text: '주 15시간 미만이라 주휴수당이 발생하지 않습니다.' });
+  if (weeklyEligible && !attendance) warnings.push({ level: 'info', text: '결근이 있어 이번 달 주휴수당을 0원으로 계산했습니다.' });
+  if (!isOver5 && (overtimeHours + nightHours + holidayHours) > 0) warnings.push({ level: 'info', text: '5인 미만은 가산수당 의무가 없어 100%로 계산했습니다.' });
+  if (isFreelance) warnings.push({ level: 'info', text: '프리랜서 모드: 4대보험 없이 사업소득 3.3%만 원천징수합니다.' });
+  if (!isFreelance && insuranceMode === 'no') warnings.push({ level: 'info', text: '4대보험 미가입으로 설정해 공제하지 않았습니다.' });
+  if (!isFreelance && insuranceMode === 'auto' && !insuranceAuto && weeklyHours > 0) warnings.push({ level: 'info', text: `월 소정근로 ${fmtQty(contractHours)}시간(60시간 미만)이라 국민연금·건강보험은 공제하지 않았습니다. 고용보험은 적용됩니다.` });
+  if (meal > RULES.mealLimit || vehicle > RULES.vehicleLimit) warnings.push({ level: 'info', text: '비과세 한도(식대·교통비 각 월 20만원) 초과분은 과세됩니다.' });
+  if (year !== RULES.year) warnings.push({ level: 'info', text: `${year}년 귀속입니다. 요율은 2026년 기준으로 계산했습니다.` });
+  if (netRaw < 0) warnings.push({ level: 'warn', text: '공제액이 지급액을 넘어 실수령액을 0원으로 표시했습니다. 4대보험 하한을 확인하세요.' });
+
+  const workTypeLabel = `${payType === 'monthly' ? '월급제' : '시급제'} · 주 ${fmtQty(weeklyHours)}시간${isFreelance ? ' · 프리랜서 3.3%' : ''}`;
+
+  return {
+    month, year, monthNum, daysInMonth, holidayDow, holidayCount,
+    isOver5, isFreelance, payType, size: isOver5 ? 'over5' : 'under5',
+    weeklyHours, workDays, dailyHours, weeklyEligible, weeklyPaidHours, attendance,
+    payWeekly, includeInMonthly, holidayWithin, holidayOver,
+    hourlyWage, monthlyWage, divisor, autoHours, totalHours,
+    basePay, weeklyPayPerWeek, weeklyPay, overtimePay, nightPay, holidayPay,
+    overtimeHours, nightHours, holidayHours, overtimeRate, nightRate,
+    meal, vehicle, otherAllowance, mealTaxFree, vehicleTaxFree, nonTaxable, taxable, gross,
+    pension, health, ltc, employment, incomeTax, localTax, otherDeduction, deductionTotal, netPay,
+    employer: { pension, health, ltc, employment: employerEmployment, total: employerTotal },
+    effectiveHourly, minOk, minGap,
+    incomeTaxEstimated, earnRows, dedRows, warnings,
+    insuranceMode, contractHours, healthApplies, employmentApplies, insured: healthApplies && employmentApplies,
+    workTypeLabel,
+    baseCalc,
+    weeklyCalc
+  };
+}
+
+function taxPensionText(taxable, month){
+  const half = String(month) < '2026-07';
+  const low = half ? RULES.pensionLowH1 : RULES.pensionLow;
+  const high = half ? RULES.pensionHighH1 : RULES.pensionHigh;
+  const base = clamp(floorTo(num(taxable), 1000), low, high);
+  return `${fmtInt(base)}원 × 4.75%`;
+}
+/* ==CORE-END== */
+
+(function(){
+  'use strict';
+  const $ = (sel, el) => (el || document).querySelector(sel);
+  const $$ = (sel, el) => Array.from((el || document).querySelectorAll(sel));
+
+  const STORE_KEY = 'payslip.employees.v1';
+  const CURRENT_KEY = 'payslip.current.v1';
+  const SAMPLE_KEY = 'payslip.sample.dismissed.v1';
+
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const nextPay = new Date(now.getFullYear(), now.getMonth() + 1, 10);
+  const defaultPayDate = `${nextPay.getFullYear()}-${String(nextPay.getMonth() + 1).padStart(2, '0')}-10`;
+
+  const DEFAULTS = {
+    companyName: '우리동네 분식', ownerName: '김민수', bizNo: '123-45-67890', companyPhone: '02-1234-5678',
+    empName: '김하늘', birthDate: '2001-03-14', empNo: 'A-01', hireDate: '2025-05-02', department: '홀 · 아르바이트',
+    size: 'under5', workerType: 'employee', insurance: 'auto', payType: 'hourly',
+    month: ym, payDate: defaultPayDate,
+    hourlyWage: '10,320', monthlyWage: '2,156,880',
+    weeklyHours: '20', workDaysPerWeek: '4', totalHours: '',
+    overtimeHours: '0', nightHours: '0', holidayHours: '0',
+    mealAllowance: '100,000', transportAllowance: '50,000', otherAllowance: '0', otherDeduction: '0',
+    weeklyPay: true, weeklyInMonthly: true, weeklyHolidayDow: '0', attendanceFull: true,
+    taxMode: 'auto', dependents: '0', manualIncomeTax: '0',
+    empId: ''
+  };
+
+  let state = loadCurrent();
+  let last = null;
+  let saveTimer = null;
+  let toastTimer = null;
+  let zoomed = false;
+
+  function loadCurrent(){
+    try {
+      const raw = localStorage.getItem(CURRENT_KEY);
+      if (!raw) return { ...DEFAULTS };
+      const saved = JSON.parse(raw);
+      if (!saved || typeof saved !== 'object') return { ...DEFAULTS };
+      return { ...DEFAULTS, ...saved };
+    } catch (err){
+      return { ...DEFAULTS };
+    }
+  }
+  function saveCurrent(){
+    try { localStorage.setItem(CURRENT_KEY, JSON.stringify(readForm())); } catch (err){ /* storage full or blocked */ }
+  }
+  function scheduleSave(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveCurrent, 350);
+  }
+
+  function readStore(){
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter(x => x && x.data && typeof x.data === 'object') : [];
+    } catch (err){ return []; }
+  }
+  function writeStore(arr){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); } catch (err){ toast('브라우저 저장 공간이 부족해 저장하지 못했어요.', 'error'); }
+  }
+
+  function readForm(){
+    const s = { ...state };
+    $$('[data-bind]').forEach(el => {
+      const key = el.dataset.bind;
+      if (el.type === 'checkbox') s[key] = el.checked;
+      else s[key] = el.value;
+    });
+    ['size', 'workerType', 'insurance', 'payType', 'taxMode'].forEach(name => {
+      const checked = $(`input[name="${name}"]:checked`);
+      if (checked) s[name] = checked.value;
+    });
+    return s;
+  }
+
+  function writeForm(s){
+    $$('[data-bind]').forEach(el => {
+      const key = el.dataset.bind;
+      if (!(key in s)) return;
+      if (el.type === 'checkbox') el.checked = !!s[key];
+      else el.value = s[key] == null ? '' : s[key];
+    });
+    ['size', 'workerType', 'insurance', 'payType', 'taxMode'].forEach(name => {
+      $$(`input[name="${name}"]`).forEach(input => { input.checked = input.value === s[name]; });
+    });
+  }
+
+  function esc(str){
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function won(n){ return `${fmtInt(n)}원`; }
+
+  function render(){
+    const r = calcPayslip(readForm());
+    last = r;
+
+    $('#sum-period').textContent = `${r.year}년 ${r.monthNum}월 실수령액`;
+    $('#sum-net').textContent = fmtInt(r.netPay);
+    $('#sum-words').textContent = `일금 ${numberToKorean(r.netPay)}원정`;
+    $('#sum-gross').textContent = won(r.gross);
+    $('#sum-deduct').textContent = won(r.deductionTotal);
+    $('#sum-insurance').textContent = won(r.pension + r.health + r.ltc + r.employment);
+    $('#sum-note').textContent = `${r.workTypeLabel} · ${r.isOver5 ? '5인 이상' : '5인 미만'} · 주휴 ${r.weeklyPay > 0 ? '포함' : '미포함'}`;
+
+    const badge = $('#min-badge');
+    if (r.minOk === null){
+      badge.className = 'min-pill';
+      badge.textContent = '임금을 입력하세요';
+    } else if (r.minOk){
+      badge.className = 'min-pill ok';
+      badge.textContent = `최저임금 충족 ${fmtInt(r.effectiveHourly)}원`;
+    } else {
+      badge.className = 'min-pill bad';
+      badge.textContent = `최저임금 ${fmtInt(r.minGap)}원 부족`;
+    }
+
+    const warnings = $('#warnings');
+    warnings.innerHTML = r.warnings.length
+      ? r.warnings.slice(0, 3).map(w => `<div class="warning ${w.level === 'warn' ? 'warn' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          <span>${esc(w.text)}</span></div>`).join('')
+      : '';
+
+    $('#mb-label').textContent = `${r.year}년 ${r.monthNum}월 실수령액`;
+    $('#mb-net').textContent = won(r.netPay);
+
+    renderInline(r);
+    renderPaper(r);
+    renderEmployer(r);
+  }
+
+  function renderInline(r){
+    $('#size-note').textContent = r.isOver5
+      ? '5인 이상: 연장·야간·휴일근로에 50% 가산수당을 적용합니다.'
+      : '5인 미만: 가산수당(제56조) 의무는 없지만, 주휴수당(제55조 제1항)은 적용됩니다.';
+    $('#size-note').className = 'hint';
+
+    $('#premium-note').textContent = r.isOver5
+      ? '연장·야간은 150%, 휴일은 8시간까지 150%·초과분 200%로 계산합니다. 같은 시간이 연장·야간에 겹치면 가산이 중첩됩니다(200%).'
+      : '5인 미만은 50% 가산 의무가 없어 근로시간 × 시급(100%)으로 계산합니다.';
+    $('#premium-note').className = 'hint';
+
+    const weeklyBox = $('#weekly-explain');
+    if (r.isFreelance){
+      weeklyBox.className = 'note-box info';
+      weeklyBox.innerHTML = '프리랜서(사업소득) 모드에서는 주휴수당을 지급하지 않습니다. 필요하면 근로자 모드로 바꿔 계산하세요.';
+    } else if (!r.attendance){
+      weeklyBox.className = 'note-box warn';
+      weeklyBox.innerHTML = '<strong>결근이 있어 주휴수당이 0원입니다.</strong> 1주 소정근로일을 모두 개근해야 주휴수당이 발생합니다.';
+    } else if (r.weeklyHours > 0 && r.weeklyHours < 15){
+      weeklyBox.className = 'note-box warn';
+      weeklyBox.innerHTML = `<strong>주 ${fmtQty(r.weeklyHours)}시간은 주휴수당 대상이 아니에요.</strong> 4주 평균 1주 소정근로시간이 15시간 이상이어야 발생합니다.`;
+    } else if (!r.payWeekly){
+      weeklyBox.className = 'note-box warn';
+      weeklyBox.innerHTML = '주휴수당 지급을 껐습니다. 명세서에는 0원으로 표시됩니다.';
+    } else if (r.includeInMonthly){
+      weeklyBox.className = 'note-box brand';
+      weeklyBox.innerHTML = `<strong>월급에 주휴수당이 포함되어 있어요.</strong> 주 ${fmtQty(r.weeklyHours)}시간 · 주휴 ${fmtQty(r.weeklyPaidHours)}시간 × ${r.holidayCount}회 = ${won(r.weeklyPay)}을 월급에서 나눠 표시합니다.`;
+    } else {
+      weeklyBox.className = 'note-box brand';
+      weeklyBox.innerHTML = `<strong>주휴 ${fmtQty(r.weeklyPaidHours)}시간 × ${fmtInt(r.hourlyWage)}원 = 주 ${won(r.weeklyPayPerWeek)}</strong><br>
+        이번 달 ${['일','월','화','수','목','금','토'][r.holidayDow]}요일 ${r.holidayCount}회 → <strong>${won(r.weeklyPay)}</strong>
+        ${r.weeklyHours >= 15 ? '' : ' · 주 15시간 미만이면 발생하지 않습니다'}`;
+    }
+
+    $('#divisor-note').textContent = r.payType === 'monthly'
+      ? `통상시급 ${fmtInt(r.effectiveHourly)}원 (월급 ÷ ${fmtQty(r.divisor)}시간)`
+      : '';
+
+    const insNote = $('#insurance-note');
+    if (r.isFreelance){
+      insNote.className = 'hint';
+      insNote.textContent = '프리랜서는 4대보험을 공제하지 않습니다(사업소득 3.3%).';
+    } else if (r.insuranceMode === 'no'){
+      insNote.className = 'hint warn';
+      insNote.textContent = '4대보험 미가입으로 설정해 공제하지 않았습니다. 실제 가입 여부를 확인하세요.';
+    } else if (r.healthApplies){
+      insNote.className = 'hint';
+      insNote.textContent = `국민연금·건강보험·고용보험을 공제합니다. (월 소정 ${fmtQty(r.contractHours)}시간)`;
+    } else {
+      insNote.className = 'hint warn';
+      insNote.textContent = `월 소정 ${fmtQty(r.contractHours)}시간(60시간 미만)이라 국민연금·건강보험은 공제하지 않습니다. 고용보험은 적용됩니다.`;
+    }
+
+    $('#daily-hours').value = r.weeklyHours > 0 ? `${fmtQty(r.dailyHours)}시간` : '—';
+    $('#f-totalHours').placeholder = r.payType === 'monthly'
+      ? `월급제 ${fmtQty(r.autoHours)}시간`
+      : `자동 ${fmtQty(r.autoHours)}시간`;
+
+    $('#tax-note').className = 'note-box info';
+    if (r.isFreelance){
+      $('#tax-note').innerHTML = '<strong>프리랜서 3.3%</strong> 사업소득세 3% + 지방소득세 0.3%로 계산합니다. 4대보험은 공제하지 않습니다.';
+    } else if (readForm().taxMode === 'manual'){
+      $('#tax-note').innerHTML = '<strong>간이세액표 금액을 직접 입력했습니다.</strong> 국세청 홈택스의 이번 달 간이세액과 대조해 보세요.';
+    } else {
+      $('#tax-note').innerHTML = `<strong>자동 추정 ${won(r.incomeTax)}</strong> 부양가족 ${readForm().dependents || 0}명 기준. 실제 원천징수는 국세청 간이세액표 금액을 입력하면 정확합니다.`;
+    }
+
+    const hourlyField = $('#hourly-field');
+    const monthlyField = $('#monthly-field');
+    hourlyField.hidden = r.payType === 'monthly';
+    monthlyField.hidden = r.payType !== 'monthly';
+    $('#weekly-in-monthly-wrap').hidden = r.payType !== 'monthly';
+    $('#manual-tax-field').hidden = r.isFreelance || readForm().taxMode !== 'manual';
+  }
+
+  function renderPaper(r){
+    const s = readForm();
+    $('#p-company').textContent = s.companyName || '사업장명';
+    $('#p-co-sub').textContent = [s.ownerName ? `대표 ${s.ownerName}` : '', s.bizNo, s.companyPhone].filter(Boolean).join(' · ') || '—';
+    $('#p-month').textContent = `${r.year}년 ${r.monthNum}월`;
+    $('#p-paydate').textContent = s.payDate || '—';
+    $('#p-mode').textContent = `${r.isFreelance ? '프리랜서(3.3%)' : '근로자'} · ${r.isOver5 ? '5인 이상' : '5인 미만'}`;
+    $('#p-name').textContent = s.empName || '—';
+    $('#p-birth').textContent = s.birthDate || '—';
+    $('#p-empno').textContent = s.empNo || '—';
+    $('#p-hire').textContent = s.hireDate || '—';
+    $('#p-dept').textContent = s.department || '—';
+    $('#p-worktype').textContent = r.workTypeLabel;
+    $('#p-totalhours').textContent = `${fmtQty(r.totalHours)}시간`;
+    $('#p-extra').textContent = `${fmtQty(r.overtimeHours)} · ${fmtQty(r.nightHours)} · ${fmtQty(r.holidayHours)}시간`;
+
+    const amountCell = (amount) => amount > 0
+      ? `<td class="amt">${fmtInt(amount)}</td>`
+      : '<td class="amt zero">–</td>';
+
+    $('#p-earn-body').innerHTML = r.earnRows.map(row =>
+      `<tr><th>${esc(row.label)}</th><td class="calc">${esc(row.calc)}</td>${amountCell(row.amount)}</tr>`
+    ).join('');
+    $('#p-ded-body').innerHTML = r.dedRows.map(row =>
+      `<tr><th>${esc(row.label)}</th><td class="calc">${esc(row.calc)}</td>${amountCell(row.amount)}</tr>`
+    ).join('');
+
+    $('#p-gross').textContent = fmtInt(r.gross);
+    $('#p-deduct').textContent = fmtInt(r.deductionTotal);
+    $('#p-net').textContent = fmtInt(r.netPay);
+    $('#p-net-words').textContent = `일금 ${numberToKorean(r.netPay)}원정`;
+
+    $('#p-hours').innerHTML = [
+      `<span>소정근로 <b>${fmtQty(r.totalHours)}시간</b></span>`,
+      `<span>연장 <b>${fmtQty(r.overtimeHours)}시간</b></span>`,
+      `<span>야간 <b>${fmtQty(r.nightHours)}시간</b></span>`,
+      `<span>휴일 <b>${fmtQty(r.holidayHours)}시간</b></span>`,
+      r.weeklyEligible && r.payWeekly
+        ? `<span>주휴 <b>${fmtQty(r.weeklyPaidHours)}시간 × ${r.holidayCount}회</b></span>`
+        : '<span>주휴 <b>미발생</b></span>'
+    ].join('');
+
+    $('#p-foot-right').textContent = `발급일 ${new Date().toISOString().slice(0, 10)}`;
+  }
+
+  function renderEmployer(r){
+    $('#employer-total-label').textContent = r.isFreelance ? '해당 없음' : `월 ${won(r.employer.total)}`;
+    $('#er-pension').textContent = won(r.employer.pension);
+    $('#er-health').textContent = won(r.employer.health);
+    $('#er-ltc').textContent = won(r.employer.ltc);
+    $('#er-employment').textContent = won(r.employer.employment);
+    $('#er-total').textContent = won(r.employer.total);
+  }
+
+  function fitPaper(){
+    const stage = $('#stage');
+    const paper = $('#paper');
+    if (!stage || !paper) return;
+    if (zoomed){
+      paper.style.zoom = '0.62';
+      $('#zoom-label').textContent = '62%';
+      return;
+    }
+    const avail = stage.clientWidth;
+    const scale = Math.min(1, Math.max(0.2, avail / 793.7));
+    paper.style.zoom = String(Math.round(scale * 1000) / 1000);
+    $('#zoom-label').textContent = `${Math.round(scale * 100)}%`;
+  }
+
+  function toast(message, tone){
+    const el = $('#toast');
+    el.textContent = message;
+    el.className = `toast show${tone ? ` ${tone}` : ''}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = 'toast'; }, 2600);
+  }
+
+  function updateEmpCount(){
+    const n = readStore().length;
+    $('#emp-count').textContent = String(n);
+    $('#emp-count-2').textContent = String(n);
+  }
+
+  function pickEmployee(s){
+    const data = { ...s };
+    ['companyName', 'ownerName', 'bizNo', 'companyPhone', 'empId'].forEach(k => delete data[k]);
+    return data;
+  }
+
+  function saveEmployee(){
+    const s = readForm();
+    if (!String(s.empName || '').trim()){
+      toast('직원 이름을 먼저 입력해 주세요.', 'warn');
+      $('#f-empName').focus();
+      return;
+    }
+    const arr = readStore();
+    const id = s.empId && arr.some(item => item.id === s.empId)
+      ? s.empId
+      : `emp_${Date.now().toString(36)}`;
+    const record = { id, name: String(s.empName).trim(), savedAt: new Date().toISOString(), data: pickEmployee(s) };
+    const index = arr.findIndex(item => item.id === id);
+    if (index >= 0) arr[index] = record;
+    else arr.push(record);
+    writeStore(arr);
+    state.empId = id;
+    saveCurrent();
+    updateEmpCount();
+    renderEmpList();
+    toast(`${record.name} 님 정보를 저장했어요.`, null);
+  }
+
+  function renderEmpList(){
+    const arr = readStore().sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)));
+    const list = $('#emp-list');
+    $('#emp-empty').hidden = arr.length > 0;
+    list.hidden = arr.length === 0;
+    list.innerHTML = arr.map(rec => {
+      const data = { ...DEFAULTS, ...rec.data };
+      const calc = calcPayslip(data);
+      const payLabel = data.payType === 'monthly'
+        ? `월급 ${fmtInt(data.monthlyWage)}원`
+        : `시급 ${fmtInt(data.hourlyWage)}원 · 주 ${fmtQty(data.weeklyHours)}시간`;
+      return `<li class="emp-item" data-id="${esc(rec.id)}">
+        <div class="emp-main"><b>${esc(rec.name)}</b><span>${payLabel}</span></div>
+        <div class="emp-net"><span>실수령</span><b>${won(calc.netPay)}</b></div>
+        <div class="emp-actions">
+          <button class="btn btn-sm" type="button" data-load="${esc(rec.id)}">불러오기</button>
+          <button class="btn btn-sm btn-ghost" type="button" data-del="${esc(rec.id)}">삭제</button>
+        </div>
+      </li>`;
+    }).join('');
+  }
+
+  function openModal(){
+    renderEmpList();
+    $('#emp-modal').hidden = false;
+    document.body.style.overflow = 'hidden';
+    $('#btn-close-modal').focus();
+  }
+  function closeModal(){
+    $('#emp-modal').hidden = true;
+    document.body.style.overflow = '';
+    $('#btn-employees').focus();
+  }
+
+  function loadEmployee(id){
+    const rec = readStore().find(item => item.id === id);
+    if (!rec) { toast('직원 정보를 찾지 못했어요.', 'error'); return; }
+    state = { ...state, ...rec.data, empId: rec.id };
+    writeForm(state);
+    render();
+    saveCurrent();
+    closeModal();
+    toast(`${rec.name} 님 정보를 불러왔어요.`);
+  }
+
+  function deleteEmployee(id, button){
+    if (button.dataset.armed !== '1'){
+      button.dataset.armed = '1';
+      button.textContent = '정말 삭제?';
+      button.classList.add('btn-danger');
+      setTimeout(() => {
+        if (document.body.contains(button)){
+          button.dataset.armed = '';
+          button.textContent = '삭제';
+          button.classList.remove('btn-danger');
+        }
+      }, 3000);
+      return;
+    }
+    const arr = readStore();
+    const rec = arr.find(item => item.id === id);
+    writeStore(arr.filter(item => item.id !== id));
+    if (state.empId === id) state.empId = '';
+    saveCurrent();
+    updateEmpCount();
+    renderEmpList();
+    toast(`${rec ? rec.name : '직원'} 님 정보를 삭제했어요.`);
+  }
+
+  function newEmployee(){
+    state = {
+      ...state, empName: '', birthDate: '', empNo: '', hireDate: '', department: '',
+      empId: '', totalHours: '', overtimeHours: '0', nightHours: '0', holidayHours: '0',
+      otherAllowance: '0', otherDeduction: '0'
+    };
+    writeForm(state);
+    render();
+    saveCurrent();
+    closeModal();
+    $('#f-empName').focus();
+    toast('새 직원 정보를 입력해 주세요.');
+  }
+
+  function copyText(){
+    const text = buildCopyText(readForm(), calcPayslip(readForm()));
+    const done = () => toast('카톡·문자에 붙여넣을 수 있게 복사했어요.');
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+  function fallbackCopy(text, done){
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    try { document.execCommand('copy'); done(); }
+    catch (err){ toast('복사하지 못했어요. 미리보기에서 직접 선택해 주세요.', 'error'); }
+    document.body.removeChild(area);
+  }
+
+  function exportJson(){
+    const data = {
+      app: 'payslip-calculator', version: 1,
+      exportedAt: new Date().toISOString(),
+      employees: readStore(), current: readForm()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payslip-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('직원 정보를 JSON 파일로 내보냈어요.');
+  }
+
+  function importJson(file){
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result));
+        const incoming = Array.isArray(data) ? data
+          : Array.isArray(data.employees) ? data.employees
+          : (data && data.data && Array.isArray(data.data.employees)) ? data.data.employees
+          : null;
+        if (!incoming) throw new Error('employees 배열 없음');
+        const valid = incoming.filter(rec => rec && typeof rec === 'object' && rec.data && typeof rec.data === 'object');
+        if (!valid.length) throw new Error('유효한 직원 없음');
+        const arr = readStore();
+        let added = 0, updated = 0;
+        valid.forEach(rec => {
+          const id = rec.id || `emp_${Math.random().toString(36).slice(2, 9)}`;
+          const next = {
+            id,
+            name: rec.name || rec.data.empName || '이름 없음',
+            savedAt: rec.savedAt || new Date().toISOString(),
+            data: rec.data
+          };
+          const i = arr.findIndex(item => item.id === id);
+          if (i >= 0){ arr[i] = next; updated += 1; }
+          else { arr.push(next); added += 1; }
+        });
+        writeStore(arr);
+        updateEmpCount();
+        renderEmpList();
+        toast(`${valid.length}명 불러옴 (새로 ${added} · 갱신 ${updated})`);
+      } catch (err){
+        toast('백업 파일을 읽지 못했어요. 이 앱에서 내보낸 JSON인지 확인해 주세요.', 'error');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function printPage(){ window.print(); }
+
+  function dismissSample(){
+    try { localStorage.setItem(SAMPLE_KEY, '1'); } catch (err){ /* ignore */ }
+    $('#sample-note').hidden = true;
+  }
+
+  // ---------- events ----------
+  function sync(){
+    state = readForm();
+    render();
+    scheduleSave();
+  }
+
+  $$('[data-bind]').forEach(el => {
+    el.addEventListener('input', sync);
+    el.addEventListener('change', sync);
+  });
+  $$('input[type="radio"][name="size"], input[type="radio"][name="workerType"], input[type="radio"][name="insurance"], input[type="radio"][name="payType"], input[type="radio"][name="taxMode"]')
+    .forEach(el => el.addEventListener('change', sync));
+
+  document.addEventListener('focusin', ev => {
+    const el = ev.target;
+    if (el && el.matches && el.matches('input[data-money]')){
+      // 값은 건드리지 않고 전체 선택만 해서, 이어서 입력하면 깔끔히 덮어쓰게 한다.
+      setTimeout(() => { try { el.select(); } catch (err){ /* ignore */ } }, 0);
+    }
+  });
+  document.addEventListener('focusout', ev => {
+    const el = ev.target;
+    if (el && el.matches && el.matches('input[data-money]') && String(el.value).trim() !== ''){
+      el.value = fmtInt(num(el.value));
+    }
+  });
+
+  document.addEventListener('click', ev => {
+    const wageBtn = ev.target.closest('[data-set-wage]');
+    if (wageBtn){ $('#f-hourlyWage').value = wageBtn.dataset.setWage; sync(); return; }
+    const hoursBtn = ev.target.closest('[data-set-hours]');
+    if (hoursBtn){ $('#f-weeklyHours').value = hoursBtn.dataset.setHours; sync(); return; }
+  });
+
+  $('#btn-save-emp').addEventListener('click', saveEmployee);
+  $('#btn-employees').addEventListener('click', openModal);
+  $('#btn-close-modal').addEventListener('click', closeModal);
+  $('#emp-modal').addEventListener('click', ev => { if (ev.target.closest('[data-close-modal]')) closeModal(); });
+  document.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && !$('#emp-modal').hidden) closeModal();
+  });
+  $('#emp-list').addEventListener('click', ev => {
+    const load = ev.target.closest('[data-load]');
+    if (load){ loadEmployee(load.dataset.load); return; }
+    const del = ev.target.closest('[data-del]');
+    if (del){ deleteEmployee(del.dataset.del, del); }
+  });
+  $('#btn-new-emp').addEventListener('click', newEmployee);
+
+  $('#btn-copy').addEventListener('click', copyText);
+  $('#btn-copy-sum').addEventListener('click', copyText);
+  ['#btn-print', '#btn-print-top', '#btn-print-sum', '#mb-print'].forEach(sel => {
+    const el = $(sel); if (el) el.addEventListener('click', printPage);
+  });
+  $('#mb-paper').addEventListener('click', () => {
+    $('#paper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('#btn-zoom-mobile').addEventListener('click', ev => {
+    zoomed = !zoomed;
+    $('#stage').classList.toggle('is-zoomed', zoomed);
+    ev.currentTarget.textContent = zoomed ? '맞춤' : '확대';
+    fitPaper();
+  });
+
+  $('#btn-export').addEventListener('click', exportJson);
+  $('#btn-import').addEventListener('click', () => $('#file-import').click());
+  $('#file-import').addEventListener('change', ev => {
+    const file = ev.target.files && ev.target.files[0];
+    if (file) importJson(file);
+    ev.target.value = '';
+  });
+  $('#btn-dismiss-sample').addEventListener('click', dismissSample);
+
+  // ---------- boot ----------
+  writeForm(state);
+  render();
+  updateEmpCount();
+  renderEmpList();
+  fitPaper();
+
+  try {
+    if (!localStorage.getItem(SAMPLE_KEY)) $('#sample-note').hidden = false;
+  } catch (err){ $('#sample-note').hidden = false; }
+
+  if (window.ResizeObserver){
+    new ResizeObserver(() => fitPaper()).observe($('#stage'));
+  } else {
+    window.addEventListener('resize', fitPaper);
+  }
+  window.addEventListener('resize', fitPaper);
+  window.addEventListener('beforeprint', () => { $('#paper').style.zoom = '1'; });
+  window.addEventListener('afterprint', fitPaper);
+})();
+</script>
+</body>
+</html>
