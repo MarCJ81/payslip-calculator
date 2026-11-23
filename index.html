@@ -962,8 +962,10 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   </div>
 </div>
 
+<script src="assets/vendor/decimal.min.js"></script>
 <script>
 /* ==CORE-START== */
+/* 금액 연산은 decimal.js(MIT, assets/vendor/decimal.min.js)로만 한다. */
 const RULES = Object.freeze({
   year: 2026,
   minHourly: 10320,
@@ -996,16 +998,48 @@ function num(v){
   const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, ''));
   return Number.isFinite(n) ? n : 0;
 }
-function floorTo(n, unit){ return Math.floor((n + 1e-7) / unit) * unit; }
-function floor10(n){ return Math.max(0, floorTo(num(n), 10)); }
-function roundWon(n){ return Math.round(num(n)); }
+
+/* ── decimal.js 고정밀 연산 (MikeMcl/decimal.js, MIT) ────────────────
+   부동소수점 오차(0.1 + 0.2)와 보험료율·시간 곱셈의 원단위 드리프트를 없앤다.
+   엔진이 없으면 조용히 틀린 금액을 내지 않도록 즉시 실패한다. */
+const DEC = (function () {
+  if (typeof Decimal !== 'function') {
+    throw new Error('decimal.js 엔진을 불러오지 못했습니다 (assets/vendor/decimal.min.js)');
+  }
+  Decimal.set({ precision: 40, rounding: Decimal.ROUND_HALF_UP, toExpNeg: -40, toExpPos: 40 });
+  function of(v) {
+    if (v instanceof Decimal) return v;
+    if (v === null || v === undefined || v === '') return new Decimal(0);
+    if (typeof v === 'number') return new Decimal(Number.isFinite(v) ? v : 0);
+    const s = String(v).replace(/,/g, '').trim();
+    try { return new Decimal(s); } catch (e) { return new Decimal(0); }
+  }
+  return {
+    of: of,
+    engine: 'decimal.js v10.6.0',
+    isDecimal: typeof Decimal.isDecimal === 'function' && Decimal.isDecimal(new Decimal(1)),
+    plus: function (a, b) { return of(a).plus(of(b)); },
+    minus: function (a, b) { return of(a).minus(of(b)); },
+    times: function (a, b) { return of(a).times(of(b)); },
+    div: function (a, b) { return of(a).div(of(b)); },
+    roundWon: function (v) { return of(v).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber(); },
+    floorWon: function (v) { return of(v).toDecimalPlaces(0, Decimal.ROUND_FLOOR).toNumber(); },
+    floor10: function (v) { return of(v).div(10).toDecimalPlaces(0, Decimal.ROUND_FLOOR).times(10).toNumber(); },
+    floorTo: function (v, unit) { return of(v).div(unit).toDecimalPlaces(0, Decimal.ROUND_FLOOR).times(unit).toNumber(); },
+    roundDp: function (v, dp) { return of(v).toDecimalPlaces(dp || 0, Decimal.ROUND_HALF_UP); }
+  };
+})();
+
+function floorTo(n, unit){ return DEC.floorTo(num(n), unit); }
+function floor10(n){ return Math.max(0, DEC.floor10(num(n))); }
+function roundWon(n){ return DEC.roundWon(num(n)); }
 function fmtInt(n){
-  const v = Math.round(num(n));
+  const v = DEC.roundWon(num(n));
   const s = String(Math.abs(v));
   return (v < 0 ? '-' : '') + s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 function fmtQty(n){
-  const v = Math.round(num(n) * 100) / 100;
+  const v = DEC.roundDp(num(n), 2).toNumber();
   return Number.isInteger(v) ? String(v) : String(v);
 }
 function clamp(n, lo, hi){ return Math.min(hi, Math.max(lo, n)); }
@@ -1046,16 +1080,16 @@ function numberToKorean(value){
 }
 
 function laborIncomeDeduction(gross){
-  const g = Math.max(0, num(gross));
-  if (g <= 5000000) return Math.min(g * 0.7, 3500000);
-  if (g <= 15000000) return 3500000 + (g - 5000000) * 0.4;
-  if (g <= 45000000) return 7500000 + (g - 15000000) * 0.15;
-  if (g <= 100000000) return 12000000 + (g - 45000000) * 0.05;
-  return 14750000 + (g - 100000000) * 0.02;
+  const g = DEC.of(Math.max(0, num(gross)));
+  if (g.lte(5000000)) return Math.min(g.times('0.7'), 3500000);
+  if (g.lte(15000000)) return g.minus(5000000).times('0.4').plus(3500000);
+  if (g.lte(45000000)) return g.minus(15000000).times('0.15').plus(7500000);
+  if (g.lte(100000000)) return g.minus(45000000).times('0.05').plus(12000000);
+  return g.minus(100000000).times('0.02').plus(14750000);
 }
 
 function progressiveTax(base){
-  const b = Math.max(0, num(base));
+  const b = DEC.of(Math.max(0, num(base)));
   const brackets = [
     [14000000, 0, 0.06],
     [50000000, 840000, 0.15],
@@ -1066,32 +1100,32 @@ function progressiveTax(base){
     [1000000000, 174060000, 0.42],
     [Infinity, 384060000, 0.45]
   ];
-  let lower = 0;
+  let lower = new Decimal(0);
   for (const [upper, base0, rate] of brackets){
-    if (b <= upper) return base0 + (b - lower) * rate;
-    lower = upper;
+    if (b.lte(upper)) return b.minus(lower).times(rate).plus(base0);
+    lower = new Decimal(upper);
   }
-  return 0;
+  return new Decimal(0);
 }
 
 function creditLimit(annualGross){
-  const g = Math.max(0, num(annualGross));
-  if (g <= 33000000) return 740000;
-  if (g <= 70000000) return Math.max(660000, 740000 - (g - 33000000) * 0.008);
-  return Math.max(500000, 660000 - (g - 70000000) * 0.005);
+  const g = DEC.of(Math.max(0, num(annualGross)));
+  if (g.lte(33000000)) return new Decimal(740000);
+  if (g.lte(70000000)) return Decimal.max(660000, DEC.of(740000).minus(g.minus(33000000).times('0.008')));
+  return Decimal.max(500000, DEC.of(660000).minus(g.minus(70000000).times('0.005')));
 }
 
 function estimateIncomeTax(monthlyTaxable, dependents, pension, health, ltc){
-  const monthly = Math.max(0, num(monthlyTaxable));
-  const annualGross = monthly * 12;
-  if (annualGross <= 0) return 0;
-  const laborIncome = Math.max(0, annualGross - laborIncomeDeduction(annualGross));
-  const personal = 1500000 * (1 + Math.max(0, Math.round(num(dependents))));
-  const insurance = Math.max(0, num(pension) + num(health) + num(ltc)) * 12;
-  const base = Math.max(0, laborIncome - personal - insurance);
+  const monthly = DEC.of(Math.max(0, num(monthlyTaxable)));
+  const annualGross = monthly.times(12);
+  if (annualGross.lte(0)) return 0;
+  const laborIncome = Decimal.max(0, annualGross.minus(laborIncomeDeduction(annualGross)));
+  const personal = DEC.of(1500000).times(DEC.plus(1, Math.max(0, DEC.roundWon(num(dependents)))));
+  const insurance = Decimal.max(0, DEC.of(num(pension)).plus(num(health)).plus(num(ltc))).times(12);
+  const base = Decimal.max(0, laborIncome.minus(personal).minus(insurance));
   const tax = progressiveTax(base);
-  const credit = Math.min(tax * 0.55, creditLimit(annualGross));
-  return floor10(Math.max(0, tax - credit) / 12);
+  const credit = Decimal.min(tax.times('0.55'), creditLimit(annualGross));
+  return floor10(Decimal.max(0, tax.minus(credit)).div(12).toNumber());
 }
 
 function buildCopyText(raw, r){
@@ -1148,11 +1182,11 @@ function calcPayslip(raw){
   const payWeekly = s.weeklyPay !== false;
   const includeInMonthly = payType === 'monthly' && s.weeklyInMonthly !== false;
 
-  const contractHours = Math.round(weeklyHours * RULES.weeksPerMonth * 100) / 100;
+  const contractHours = DEC.roundDp(DEC.times(weeklyHours, RULES.weeksPerMonth), 2).toNumber();
   const insuranceAuto = contractHours >= 60;
   const healthApplies = !isFreelance && insuranceMode !== 'no' && (insuranceMode === 'yes' || insuranceAuto);
   const employmentApplies = !isFreelance && insuranceMode !== 'no';
-  const autoHours = Math.round(weeklyHours * RULES.weeksPerMonth * 100) / 100;
+  const autoHours = DEC.roundDp(DEC.times(weeklyHours, RULES.weeksPerMonth), 2).toNumber();
   let totalHours = num(s.totalHours) > 0 ? num(s.totalHours) : autoHours;
 
   let hourlyWage = Math.max(0, num(s.hourlyWage));
@@ -1160,24 +1194,24 @@ function calcPayslip(raw){
   const paidWeeklyHours = weeklyEligible && (payWeekly || payType === 'monthly') ? weeklyPaidHours : 0;
   const divisor = weeklyHours >= 40
     ? RULES.monthlyStdHours
-    : Math.round((weeklyHours + paidWeeklyHours) * RULES.weeksPerMonth * 100) / 100;
+    : DEC.roundDp(DEC.times(DEC.plus(weeklyHours, paidWeeklyHours), RULES.weeksPerMonth), 2).toNumber();
 
   if (payType === 'monthly'){
-    hourlyWage = (monthlyWage > 0 && divisor > 0) ? monthlyWage / divisor : 0;
-    totalHours = Math.round(weeklyHours * RULES.weeksPerMonth * 100) / 100;
+    hourlyWage = (monthlyWage > 0 && divisor > 0) ? DEC.div(monthlyWage, divisor).toNumber() : 0;
+    totalHours = DEC.roundDp(DEC.times(weeklyHours, RULES.weeksPerMonth), 2).toNumber();
   }
 
-  const weeklyPayPerWeek = (weeklyEligible && payWeekly) ? roundWon(hourlyWage * weeklyPaidHours) : 0;
+  const weeklyPayPerWeek = (weeklyEligible && payWeekly) ? DEC.roundWon(DEC.times(hourlyWage, weeklyPaidHours)) : 0;
   let weeklyPay = weeklyPayPerWeek * holidayCount;
   let basePay = 0;
 
   if (payType === 'hourly'){
-    basePay = roundWon(hourlyWage * totalHours);
+    basePay = DEC.roundWon(DEC.times(hourlyWage, totalHours));
   } else if (includeInMonthly){
     weeklyPay = Math.min(weeklyPay, monthlyWage);
-    basePay = Math.max(0, roundWon(monthlyWage - weeklyPay));
+    basePay = Math.max(0, DEC.roundWon(DEC.minus(monthlyWage, weeklyPay)));
   } else {
-    basePay = roundWon(monthlyWage);
+    basePay = DEC.roundWon(monthlyWage);
   }
 
   const overtimeHours = Math.max(0, num(s.overtimeHours));
@@ -1191,10 +1225,10 @@ function calcPayslip(raw){
   const holidayWithinRate = 1 + premium;
   const holidayOverRate = 1 + premium + (isOver5 ? RULES.holidayOver8 : 0);
 
-  const overtimePay = roundWon(hourlyWage * overtimeHours * overtimeRate);
-  const nightPay = roundWon(hourlyWage * nightHours * nightRate);
-  const holidayPay = roundWon(
-    hourlyWage * (holidayWithin * holidayWithinRate + holidayOver * holidayOverRate)
+  const overtimePay = DEC.roundWon(DEC.times(DEC.times(hourlyWage, overtimeHours), overtimeRate));
+  const nightPay = DEC.roundWon(DEC.times(DEC.times(hourlyWage, nightHours), nightRate));
+  const holidayPay = DEC.roundWon(
+    DEC.times(hourlyWage, DEC.plus(DEC.times(holidayWithin, holidayWithinRate), DEC.times(holidayOver, holidayOverRate)))
   );
 
   const meal = Math.max(0, num(s.mealAllowance));
@@ -1215,22 +1249,22 @@ function calcPayslip(raw){
       const low = half ? RULES.pensionLowH1 : RULES.pensionLow;
       const high = half ? RULES.pensionHighH1 : RULES.pensionHigh;
       const pensionBase = clamp(floorTo(taxable, 1000), low, high);
-      pension = Math.floor(pensionBase * RULES.pensionRate);
-      health = clamp(floor10(taxable * RULES.healthRate), RULES.healthMin, RULES.healthMax);
-      ltc = floor10(health * (RULES.ltcRate / RULES.healthRatePct));
+      pension = DEC.floorWon(DEC.times(pensionBase, RULES.pensionRate));
+      health = clamp(floor10(DEC.times(taxable, RULES.healthRate).toNumber()), RULES.healthMin, RULES.healthMax);
+      ltc = floor10(DEC.div(DEC.times(health, RULES.ltcRate), RULES.healthRatePct).toNumber());
     }
-    if (employmentApplies) employment = floor10(taxable * RULES.employmentRate);
+    if (employmentApplies) employment = floor10(DEC.times(taxable, RULES.employmentRate).toNumber());
   }
   const incomeTaxEstimated = !isFreelance && s.taxMode !== 'manual';
   if (isFreelance){
-    incomeTax = floor10(taxable * RULES.freelanceRate);
-    localTax = floor10(taxable * RULES.freelanceLocalRate);
+    incomeTax = floor10(DEC.times(taxable, RULES.freelanceRate).toNumber());
+    localTax = floor10(DEC.times(taxable, RULES.freelanceLocalRate).toNumber());
   } else if (s.taxMode === 'manual'){
     incomeTax = Math.max(0, roundWon(num(s.manualIncomeTax)));
-    localTax = floor10(incomeTax * RULES.localTaxRate);
+    localTax = floor10(DEC.times(incomeTax, RULES.localTaxRate).toNumber());
   } else {
     incomeTax = estimateIncomeTax(taxable, num(s.dependents), pension, health, ltc);
-    localTax = floor10(incomeTax * RULES.localTaxRate);
+    localTax = floor10(DEC.times(incomeTax, RULES.localTaxRate).toNumber());
   }
 
   const otherDeduction = Math.max(0, roundWon(num(s.otherDeduction)));
@@ -1238,14 +1272,14 @@ function calcPayslip(raw){
   const netRaw = gross - deductionTotal;
   const netPay = Math.max(0, netRaw);
 
-  const employerEmployment = employmentApplies ? floor10(taxable * RULES.employerEmploymentRate) : 0;
+  const employerEmployment = employmentApplies ? floor10(DEC.times(taxable, RULES.employerEmploymentRate).toNumber()) : 0;
   const employerTotal = isFreelance ? 0 : pension + health + ltc + employerEmployment;
 
   const effectiveHourly = payType === 'monthly'
-    ? (divisor > 0 ? monthlyWage / divisor : 0)
+    ? (divisor > 0 ? DEC.div(monthlyWage, divisor).toNumber() : 0)
     : hourlyWage;
-  const minOk = effectiveHourly === 0 ? null : effectiveHourly + 0.001 >= RULES.minHourly;
-  const minGap = Math.max(0, RULES.minHourly - effectiveHourly);
+  const minOk = effectiveHourly === 0 ? null : DEC.plus(effectiveHourly, '0.001').gte(RULES.minHourly);
+  const minGap = Math.max(0, DEC.minus(RULES.minHourly, effectiveHourly).toNumber());
 
   const baseCalc = payType === 'hourly'
     ? `${fmtQty(totalHours)}시간 × ${fmtInt(hourlyWage)}원`
