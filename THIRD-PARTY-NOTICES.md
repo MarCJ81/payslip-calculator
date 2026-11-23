@@ -4,7 +4,7 @@
 
 | 구성 요소 | 버전 | 라이선스 | 쓰는 곳 | 원본 |
 | --- | --- | --- | --- | --- |
-| decimal.js | 10.6.0 | MIT | `assets/vendor/decimal.min.js` — 4대보험·소득세·수당 금액 연산 | https://github.com/MikeMcl/decimal.js |
+| decimal.js | 10.6.0 | MIT | `assets/vendor/decimal.js` — 4대보험·소득세·수당 금액 연산 | https://github.com/MikeMcl/decimal.js |
 
 ## MIT License (decimal.js)
 
