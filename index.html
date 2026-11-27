@@ -544,8 +544,8 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   <section class="hero">
     <div class="hero-copy">
     <span class="eyebrow"><b>2026</b> 5인 미만 사업장 · 근로기준법 제48조</span>
-    <h1>알바 급여명세서,<br><em>1분</em>이면 끝</h1>
-    <p>주휴수당·4대보험·소득세까지 자동 계산. 근로기준법 제48조가 요구하는 기재사항을 모두 담아 A4 한 장으로 바로 인쇄하거나 카톡으로 보내세요.</p>
+    <h1 data-i18n-block="hero-h1">알바 급여명세서,<br><em>1분</em>이면 끝</h1>
+    <p data-i18n-block="hero-lead">주휴수당·4대보험·소득세까지 자동 계산. 근로기준법 제48조가 요구하는 기재사항을 모두 담아 A4 한 장으로 바로 인쇄하거나 카톡으로 보내세요.</p>
     <p class="hero-law">임금명세서 교부 의무는 5인 미만 사업장에도 적용됩니다. 미교부 시 500만원 이하 과태료.</p>
     <div class="hero-chips" aria-label="주요 기능">
       <span class="chip-soft"><b>2026</b> 최저시급 10,320원</span>
@@ -1079,6 +1079,34 @@ function numberToKorean(value){
   return out;
 }
 
+var EN_ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+var EN_TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+function enUnder1000(x){
+  var out = [];
+  if (x >= 100){ out.push(EN_ONES[Math.floor(x / 100)] + ' hundred'); x %= 100; }
+  if (x >= 20){ out.push(EN_TENS[Math.floor(x / 10)] + (x % 10 ? '-' + EN_ONES[x % 10] : '')); }
+  else if (x > 0){ out.push(EN_ONES[x]); }
+  return out.join(' ');
+}
+function enWords(value){
+  var n = Math.floor(Math.abs(Number(value) || 0));
+  if (!n) return 'zero';
+  var groups = ['', ' thousand', ' million', ' billion', ' trillion'];
+  var parts = [];
+  var g = 0;
+  while (n > 0 && g < groups.length){
+    var chunk = n % 1000;
+    if (chunk) parts.unshift(enUnder1000(chunk) + groups[g]);
+    n = Math.floor(n / 1000);
+    g += 1;
+  }
+  return parts.join(' ');
+}
+function amtWords(value){
+  if (window.ONETAP_I18N && ONETAP_I18N.lang() === 'en') return 'In words: ' + enWords(value) + ' won';
+  return '일금 ' + numberToKorean(value) + '원정';
+}
+
 function laborIncomeDeduction(gross){
   const g = DEC.of(Math.max(0, num(gross)));
   if (g.lte(5000000)) return Math.min(g.times('0.7'), 3500000);
@@ -1150,7 +1178,7 @@ function buildCopyText(raw, r){
   lines.push(`공제 총액 ${fmtInt(calc.deductionTotal)}원`);
   lines.push('');
   lines.push(`■ 실수령액 ${fmtInt(calc.netPay)}원`);
-  lines.push(`(일금 ${numberToKorean(calc.netPay)}원정)`);
+  lines.push(`(${amtWords(calc.netPay)})`);
   if (calc.incomeTaxEstimated) lines.push('※ 소득세는 간이세액표를 참고한 추정치입니다.');
   return lines.join('\n');
 }
@@ -1474,7 +1502,7 @@ function taxPensionText(taxable, month){
 
     $('#sum-period').textContent = `${r.year}년 ${r.monthNum}월 실수령액`;
     $('#sum-net').textContent = fmtInt(r.netPay);
-    $('#sum-words').textContent = `일금 ${numberToKorean(r.netPay)}원정`;
+    $('#sum-words').textContent = amtWords(r.netPay);
     $('#sum-gross').textContent = won(r.gross);
     $('#sum-deduct').textContent = won(r.deductionTotal);
     $('#sum-insurance').textContent = won(r.pension + r.health + r.ltc + r.employment);
@@ -1612,7 +1640,7 @@ function taxPensionText(taxable, month){
     $('#p-gross').textContent = fmtInt(r.gross);
     $('#p-deduct').textContent = fmtInt(r.deductionTotal);
     $('#p-net').textContent = fmtInt(r.netPay);
-    $('#p-net-words').textContent = `일금 ${numberToKorean(r.netPay)}원정`;
+    $('#p-net-words').textContent = amtWords(r.netPay);
 
     $('#p-hours').innerHTML = [
       `<span>소정근로 <b>${fmtQty(r.totalHours)}시간</b></span>`,
@@ -1938,6 +1966,7 @@ function taxPensionText(taxable, month){
   // ---------- boot ----------
   writeForm(state);
   render();
+  document.addEventListener('onetap:lang', function(){ try { render(); } catch (e) {} });
   updateEmpCount();
   renderEmpList();
   fitPaper();
@@ -1956,5 +1985,6 @@ function taxPensionText(taxable, month){
   window.addEventListener('afterprint', fitPaper);
 })();
 </script>
+<script src="i18n.js"></script>
 </body>
 </html>
