@@ -1103,7 +1103,8 @@ function enWords(value){
   return parts.join(' ');
 }
 function amtWords(value){
-  if (window.ONETAP_I18N && ONETAP_I18N.lang() === 'en') return 'In words: ' + enWords(value) + ' won';
+  var w = typeof window !== 'undefined' ? window : null;
+  if (w && w.ONETAP_I18N && w.ONETAP_I18N.lang() === 'en') return 'In words: ' + enWords(value) + ' won';
   return '일금 ' + numberToKorean(value) + '원정';
 }
 
@@ -1966,7 +1967,7 @@ function taxPensionText(taxable, month){
   // ---------- boot ----------
   writeForm(state);
   render();
-  document.addEventListener('onetap:lang', function(){ try { render(); } catch (e) {} });
+  if (typeof document !== 'undefined') document.addEventListener('onetap:lang', function(){ try { render(); } catch (e) {} });
   updateEmpCount();
   renderEmpList();
   fitPaper();
